@@ -8,8 +8,8 @@
     body { font-family: 'Segoe UI', arial, sans-serif; background: #f7f8fa; margin: 0; }
     h1 { text-align: center; padding: 1rem; background: #1976d2; color: #fff; margin: 0 0 1rem 0;}
     nav { background: #eee; padding: 0.5rem; display: flex; justify-content: center; gap:1rem; border-bottom: 1px solid #ddd;}
-    nav a { padding: 0.5rem 1.2rem; border-radius: 4px; color: #1976d2; text-decoration: none; font-weight: bold;}
-    nav a.active,nav a:focus { background: #1976d2; color: #fff;}
+    nav a { padding: 0.5rem 1.2rem; border-radius: 4px; color: #1976d2; text-decoration: none; font-weight: bold; cursor: pointer;}
+    nav a.active { background: #1976d2; color: #fff;}
     section { display:none; max-width: 1100px; margin: auto; margin-top: 1rem; background: #fff; padding: 1rem 1.5rem 2rem 1.5rem; border-radius: 8px; box-shadow: 0 3px 12px #ccc}
     section.active { display:block;}
     label { display:block; margin-top: 0.5rem;}
@@ -23,8 +23,8 @@
     .decision-good{ color:green; font-weight:bold;}
     .decision-no{ color:red; font-weight:bold;}
     .decision-review{ color:goldenrod; font-weight: bold;}
-    .barbell { margin:1rem 0; display: flex; align-items: center;}
-    .plate { display: inline-block; border-radius: 2px; margin-right: 4px; font-size:1rem; min-width:32px; font-weight:bold; text-align:center; color:#fff; padding:2px 8px;}
+    .barbell { margin:1rem 0; display: flex; align-items: center; flex-wrap: wrap;}
+    .plate { display: inline-block; border-radius: 2px; margin-right: 4px; font-size:0.9rem; min-width:32px; font-weight:bold; text-align:center; color:#fff; padding:2px 8px;}
     .red{ background:#d32f2f;}
     .blue{background:#1976d2;}
     .yellow{background:#fbc02d; color:#333;}
@@ -32,7 +32,7 @@
     .white{background:white; color:#111; border:1px solid #333;}
     .gray{background:#727272;}
     .timer-display{ font-size:2.8rem; text-align:center; font-weight:bold; margin:1rem 0;}
-    .filters{ margin: 1rem 0; display: flex; gap: 1rem; align-items: center;}
+    .filters{ margin: 1rem 0; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;}
     .cat-header{ background: #e3ecfc; color:#1976d2; font-weight: bold; font-size: 1rem;}
     .div-header{ background: #faf7de; color:#bf9400;}
     @media(max-width:900px){
@@ -44,10 +44,10 @@
 <body>
 <h1>DualLift Competition Dashboard</h1>
 <nav>
-  <a href="#" id="nav-main" class="active">Main Menu</a>
-  <a href="#audience" id="nav-audience">Audience Display</a>
-  <a href="#scoreboard" id="nav-scoreboard">Scoreboard</a>
-  <a href="#control" id="nav-control">Control Panel</a>
+  <a onclick="switchSection('main-menu')" class="active">Main Menu</a>
+  <a onclick="switchSection('audience-display')">Audience Display</a>
+  <a onclick="switchSection('scoreboard-display')">Scoreboard</a>
+  <a onclick="switchSection('control-panel')">Control Panel</a>
 </nav>
 
 <!-- MAIN MENU -->
@@ -61,14 +61,6 @@
     <li>Automatic Sinclair & Wilks scoring</li>
     <li>Flexible views for audience, operators, and management</li>
   </ul>
-  <fieldset>
-    <legend>Quick Navigation</legend>
-    <div>
-      <a href="#audience" id="menu-link-audience">Open Audience Display</a>
-      <a href="#scoreboard" id="menu-link-scoreboard">Open Scoreboard</a>
-      <a href="#control" id="menu-link-control">Open Control Panel</a>
-    </div>
-  </fieldset>
   <fieldset>
     <legend>Choose Event Type</legend>
     <label>
@@ -109,10 +101,10 @@
   <h2>Scoreboard</h2>
   <div class="filters">
     <label>Show Category:
-      <select id="score-cat-filter" multiple size="1"></select>
+      <select id="score-cat-filter" multiple size="3"></select>
     </label>
     <label>Show Division:
-      <select id="score-div-filter" multiple>
+      <select id="score-div-filter" multiple size="2">
         <option value="A" selected>A</option>
         <option value="B" selected>B</option>
       </select>
@@ -124,13 +116,13 @@
 <!-- CONTROL PANEL (Registration & Logging) -->
 <section id="control-panel">
   <h2>Control Panel</h2>
-  <div style="margin-bottom:1rem;color:#1976d2;" id="ctl-event-desc"></div>
+  <div style="margin-bottom:1rem;color:#1976d2; font-size:0.95rem;" id="ctl-event-desc"></div>
   <div class="filters">
     <label>Show Category:
-      <select id="reg-cat-filter" multiple size="1"></select>
+      <select id="reg-cat-filter" multiple size="3"></select>
     </label>
     <label>Show Division:
-      <select id="reg-div-filter" multiple>
+      <select id="reg-div-filter" multiple size="2">
         <option value="A" selected>A</option>
         <option value="B" selected>B</option>
       </select>
@@ -146,7 +138,7 @@
         <label>Date of Birth:<input required type="date" id="reg-dob"></label>
         <label>Category:<select id="reg-category"></select></label>
         <label>Division:<select id="reg-division"><option value="A">A</option><option value="B">B</option></select></label>
-        <div id="olympic-inputs">
+        <div id="olympic-inputs" style="display:none;">
           <label>1st Snatch (kg):<input type="number" min="0" step="0.5" id="reg-snatch"></label>
           <label>1st Clean & Jerk (kg):<input type="number" min="0" step="0.5" id="reg-cj"></label>
         </div>
@@ -164,9 +156,9 @@
   <fieldset>
     <legend>Timer (syncs to Audience display)</legend>
     <input type="number" id="ctl-timer-len" value="60" min="10" max="180"> seconds
-    <button id="ctl-timer-start">Start</button>
-    <button id="ctl-timer-pause">Pause</button>
-    <button id="ctl-timer-reset">Reset</button>
+    <button type="button" id="ctl-timer-start">Start</button>
+    <button type="button" id="ctl-timer-pause">Pause</button>
+    <button type="button" id="ctl-timer-reset">Reset</button>
     <span class="timer-display" id="ctl-timer">60</span>
   </fieldset>
 </section>
@@ -177,13 +169,12 @@
     powerlifting: { categories: [], lifters: [], attempts: [] },
     currentType: null,
     competitionName: '',
-    logging: {currentLifter: null, currentAttempt: null},
+    logging: {currentLifter: 0},
     timer: {val:60, running:false, interval: null}
   };
 
   // Helper: Sinclair and Wilks
   function sinclairScore(total, bw, gender='M'){
-    // 2024 A/B coefficients
     let a=0.75194503,b=175.508;
     if(gender=='F'){ a=0.783497476; b=153.655;}
     if(!total || !bw) return 0;
@@ -199,25 +190,20 @@
     let d = c[0] + c[1]*bw + c[2]*bw**2 + c[3]*bw**3 + c[4]*bw**4 + c[5]*bw**5;
     return d===0 ? 0 : total*500/d;
   }
-  // UI Init
+  
+  // UI Init: Switch Section
   function switchSection(id) {
     document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
-    if(id==="main-menu") document.getElementById('nav-main').classList.add('active');
-    if(id==="audience-display") document.getElementById('nav-audience').classList.add('active');
-    if(id==="scoreboard-display") document.getElementById('nav-scoreboard').classList.add('active');
-    if(id==="control-panel") document.getElementById('nav-control').classList.add('active');
-    // Sync timer
-    updateAudienceDisplay();
-    updateScoreboard();
-    updateRegisteredLifters();
-    updateLoggingArea();
+    document.querySelectorAll('nav a').forEach(a=>{
+      if(a.textContent.toLowerCase().includes(id.replace('-',' '))) a.classList.add('active');
+    });
+    // Sync views when switching
+    if(id==="audience-display") updateAudienceDisplay();
+    if(id==="scoreboard-display") updateScoreboard();
+    if(id==="control-panel"){ updateRegisteredLifters(); updateLoggingArea();}
   }
-  ["nav-main","nav-audience","nav-scoreboard","nav-control","menu-link-audience","menu-link-scoreboard","menu-link-control"].forEach(id=>{
-    let e = document.getElementById(id);
-    if(e) e.onclick=(ev)=>{ ev.preventDefault(); switchSection(id.replace(/^nav-|^menu-link-/,'').replace("-display","").replace("-panel","-panel"));};
-  });
 
   // Event setup
   document.getElementById('event-type-select').onchange=function(){
@@ -229,6 +215,7 @@
       document.getElementById('powerlifting-inputs').style.display = v==="powerlifting"?"block":"none";
     }
   };
+  
   document.getElementById('setup-confirm-btn').onclick=function(){
     let catStr=document.getElementById('category-list').value;
     let cats = catStr.split(',').map(c=>c.trim()).filter(Boolean);
@@ -243,7 +230,7 @@
     populateCatFilters();
     populateRegCatOptions();
     document.getElementById('ctl-event-desc').textContent = `Current Event: ${state.competitionName || '[unnamed]'} (${state.currentType==="olympic"?"Olympic Weightlifting":"Powerlifting"})`;
-    document.getElementById('setup-msg').textContent="Setup complete! Go to Control Panel to add lifters.";
+    document.getElementById('setup-msg').textContent="✓ Setup complete! Go to Control Panel to add lifters.";
   };
 
   function populateRegCatOptions() {
@@ -261,6 +248,7 @@
   document.getElementById('reg-form').onsubmit=function(e){
     e.preventDefault();
     let ty = state.currentType;
+    if(!ty) { alert("Setup competition first!"); return;}
     let out = {
       name: document.getElementById('reg-name').value,
       team: document.getElementById('reg-team').value,
@@ -268,7 +256,7 @@
       dob: document.getElementById('reg-dob').value,
       category: document.getElementById('reg-category').value,
       division: document.getElementById('reg-division').value,
-      gender: 'M', // for now, add gender input as feature later
+      gender: 'M',
     };
     if(ty==="olympic"){
       out.firstLifts = [
@@ -285,6 +273,7 @@
     out.attempts=[]; out.total=0;
     state[ty].lifters.push(out);
     updateRegisteredLifters();
+    updateScoreboard();
     this.reset();
   };
 
@@ -301,14 +290,17 @@
       });
     });
   }
+  
   function getSelectedFilter(selId) {
     let sel = document.getElementById(selId);
+    if(!sel) return [];
     return Array.from(sel.selectedOptions).map(x=>x.value);
   }
 
   // Registered Lifters: filterable/grouped view
   function updateRegisteredLifters() {
     let ty = state.currentType;
+    if(!ty) return;
     let disp=document.getElementById('registered-lifters');
     let lifters = state[ty].lifters;
     let cats = getSelectedFilter('reg-cat-filter');
@@ -323,6 +315,12 @@
       if(!grouped[l.category][l.division]) grouped[l.category][l.division]=[];
       grouped[l.category][l.division].push(l);
     });
+    
+    if(Object.keys(grouped).length===0) {
+      disp.innerHTML = '<p>No lifters added yet.</p>';
+      return;
+    }
+    
     Object.keys(grouped).sort((a,b)=>parseFloat(a)-parseFloat(b)).forEach(cat=>{
       html+=`<tr class="cat-header"><td colspan="99">${cat} kg</td></tr>`;
       Object.keys(grouped[cat]).sort().forEach(div=>{
@@ -343,16 +341,18 @@
     });
     disp.innerHTML = `<table>${html}</table>`;
   }
-  document.getElementById('reg-cat-filter').onchange=updateRegisteredLifters;
-  document.getElementById('reg-div-filter').onchange=updateRegisteredLifters;
+  
+  document.getElementById('reg-cat-filter').addEventListener('change', updateRegisteredLifters);
+  document.getElementById('reg-div-filter').addEventListener('change', updateRegisteredLifters);
 
   // Scoreboard: group by cat/div and filter
   function updateScoreboard(){
     let ty = state.currentType;
+    if(!ty) return;
     let lifters = state[ty].lifters;
     let cats = getSelectedFilter('score-cat-filter');
-    let divs= getSelectedFilter('score-div-filter');
-    let catsSet=new Set(cats), divsSet=new Set(divs);
+    let divs = getSelectedFilter('score-div-filter');
+    let catsSet = new Set(cats), divsSet = new Set(divs);
     let out={};
     lifters.forEach(l=>{
       if(!catsSet.has(l.category)||!divsSet.has(l.division)) return;
@@ -360,7 +360,13 @@
       if(!out[l.category][l.division]) out[l.category][l.division]=[];
       out[l.category][l.division].push(l);
     });
+    
     let html='';
+    if(Object.keys(out).length===0) {
+      document.getElementById('scoreboard-table-area').innerHTML = '<p>No lifters match filters.</p>';
+      return;
+    }
+    
     Object.keys(out).sort((a,b)=>parseFloat(a)-parseFloat(b)).forEach(cat=>{
       html+=`<tr class="cat-header"><td colspan="99">${cat} kg</td></tr>`;
       Object.keys(out[cat]).sort().forEach(div=>{
@@ -372,10 +378,7 @@
         out[cat][div].forEach(l=>{
           let total=0, score=0, rk='-';
           if(l.attempts && l.attempts.length){
-            if(ty==="olympic")
-              total=l.attempts.reduce((s,a)=>s+(a.status==='good'?a.weight:0),0);
-            else
-              total=l.attempts.reduce((s,a)=>s+(a.status==='good'?a.weight:0),0);
+            total=l.attempts.reduce((s,a)=>s+(a.status==='good'?a.weight:0),0);
             score=ty==="olympic"?sinclairScore(total,l.bodyweight):wilksScore(total,l.bodyweight);
           }
           html+=`<tr><td>${l.name}</td><td>${l.dob}</td><td>${l.team}</td><td>${l.bodyweight}</td>`;
@@ -389,34 +392,35 @@
     });
     document.getElementById('scoreboard-table-area').innerHTML = `<table>${html}</table>`;
   }
-  document.getElementById('score-cat-filter').onchange=updateScoreboard;
-  document.getElementById('score-div-filter').onchange=updateScoreboard;
+  
+  document.getElementById('score-cat-filter').addEventListener('change', updateScoreboard);
+  document.getElementById('score-div-filter').addEventListener('change', updateScoreboard);
 
 
   // Attempt Logging (with buttons)
   function updateLoggingArea(){
     const area = document.getElementById('logging-area');
     const ty = state.currentType;
+    if(!ty) { area.innerHTML=""; return; }
     const lifters = state[ty].lifters;
-    if(lifters.length===0){ area.innerHTML =""; return;}
-    // Select current lifter
-    let idx=state.logging.currentLifter||0;
+    if(lifters.length===0){ area.innerHTML ="<p>No lifters registered yet.</p>"; return;}
+    let idx=state.logging.currentLifter;
     if(idx>=lifters.length) idx=0;
     let l=lifters[idx];
     area.innerHTML = `<fieldset>
     <legend>Attempt Logging</legend>
-    <div>Current Lifter: <strong>${l.name} (${l.category}kg Div ${l.division})</strong></div>
+    <div><strong>Current Lifter: ${l.name}</strong> (${l.category}kg Div ${l.division})</div>
     <div>Bodyweight: ${l.bodyweight} kg | DOB: ${l.dob}</div>
-    <div>Next Attempt: <span id="log-attempt-amt">${l.firstLifts[0]}</span> kg</div>
+    <div><strong>Next Attempt: <span id="log-attempt-amt">${l.firstLifts[0]}</span> kg</strong></div>
     <div class="barbell" id="ctl-barbell"></div>
     <div style="margin-top:0.8rem">
-      <button class="decision-good" onclick="finalizeAttempt('good')">Good Lift</button>
-      <button class="decision-no" onclick="finalizeAttempt('no')">No Lift</button>
-      <button class="decision-review" onclick="finalizeAttempt('review')">Under Review</button>
+      <button type="button" class="decision-good" onclick="finalizeAttempt('good')">✓ Good Lift</button>
+      <button type="button" class="decision-no" onclick="finalizeAttempt('no')">✗ No Lift</button>
+      <button type="button" class="decision-review" onclick="finalizeAttempt('review')">? Under Review</button>
     </div>
     <div style="margin-top:1rem">
-      <button onclick="prevLifter()">Prev Lifter</button>
-      <button onclick="nextLifter()">Next Lifter</button>
+      <button type="button" onclick="prevLifter()">← Prev Lifter</button>
+      <button type="button" onclick="nextLifter()">Next Lifter →</button>
     </div>
     </fieldset>`;
     updateBarbellDisplay('ctl-barbell',l.firstLifts[0]);
@@ -424,20 +428,28 @@
 
   // Audience Display (sync from logging)
   function updateAudienceDisplay(){
-    const ty=state.currentType;const lifters=state[ty].lifters;
-    let idx=state.logging.currentLifter||0,l=lifters[idx];
+    const ty=state.currentType;
+    if(!ty) {
+      document.getElementById('aud-cur-lifter').textContent="---";
+      document.getElementById('aud-cur-weight').textContent="---";
+      return;
+    }
+    const lifters=state[ty].lifters;
+    let idx=state.logging.currentLifter;
+    if(idx>=lifters.length) idx=0;
+    let l=lifters[idx];
     document.getElementById('aud-cur-lifter').textContent=l?l.name:"---";
     document.getElementById('aud-cur-weight').textContent=l?l.firstLifts[0]:"---";
     document.getElementById('aud-decision').textContent="Waiting";
     updateBarbellDisplay('aud-barbell',l?l.firstLifts[0]:0);
-    // Timer sync
     document.getElementById('aud-timer').textContent=state.timer.val;
   }
 
   function updateBarbellDisplay(id,weight){
     let target = document.getElementById(id);
+    if(!target) return;
     const barWeight = 20, collar = 5;
-    if(weight < barWeight + collar){ target.innerHTML='No plates loaded'; return; }
+    if(weight < barWeight + collar){ target.innerHTML='<span style="color:#666">No plates loaded</span>'; return; }
     let perSide = (weight-barWeight-collar)/2, plates=[],
     defs=[{w:25,c:'red'},{w:20,c:'blue'},{w:15,c:'yellow'},{w:10,c:'green'},{w:5,c:'white'},{w:2.5,c:'red'},{w:2,c:'blue'},{w:1.5,c:'yellow'},{w:1,c:'green'},{w:0.5,c:'white'}];
     for(let pd of defs){
@@ -452,49 +464,57 @@
 
   // Attempt logging events/global
   window.finalizeAttempt=function(decision){
-    let ty=state.currentType, lifters=state[ty].lifters, idx=state.logging.currentLifter||0, l=lifters[idx];
+    let ty=state.currentType, lifters=state[ty].lifters, idx=state.logging.currentLifter, l=lifters[idx];
     if(!l)return;
     l.attempts.push({weight:l.firstLifts[0],status:decision});
-    document.getElementById('aud-decision').textContent = decision==="good"?"Good Lift":decision==="no"?"No Lift":"Under Review";
+    document.getElementById('aud-decision').textContent = decision==="good"?"✓ Good Lift":decision==="no"?"✗ No Lift":"? Under Review";
     updateScoreboard();
+    updateAudienceDisplay();
     nextLifter();
   };
+  
   window.prevLifter=function(){
-    let ty=state.currentType, lifters=state[ty].lifters, idx=state.logging.currentLifter||0;
-    if(idx>0) state.logging.currentLifter=idx-1;
+    let ty=state.currentType, lifters=state[ty].lifters;
+    if(state.logging.currentLifter>0) state.logging.currentLifter--;
     else state.logging.currentLifter=lifters.length-1;
     updateLoggingArea();updateAudienceDisplay();
   };
+  
   window.nextLifter=function(){
-    let ty=state.currentType, lifters=state[ty].lifters, idx=state.logging.currentLifter||0;
-    if(idx<lifters.length-1) state.logging.currentLifter=idx+1;
+    let ty=state.currentType, lifters=state[ty].lifters;
+    if(state.logging.currentLifter<lifters.length-1) state.logging.currentLifter++;
     else state.logging.currentLifter=0;
     updateLoggingArea();updateAudienceDisplay();
   };
 
   // Timer controls (sync to both Control & Audience Display)
-  function timerSyncViews(){ document.getElementById('ctl-timer').textContent=state.timer.val; document.getElementById('aud-timer').textContent=state.timer.val; }
-  document.getElementById('ctl-timer-start').onclick=function(){
+  function timerSyncViews(){ 
+    document.getElementById('ctl-timer').textContent=state.timer.val; 
+    document.getElementById('aud-timer').textContent=state.timer.val; 
+  }
+  
+  document.getElementById('ctl-timer-start').addEventListener('click', function(){
     if(state.timer.running)return;
     state.timer.running=true;
-    state.timer.interval=setInterval(()=>{state.timer.val--; timerSyncViews();if(state.timer.val<=0){clearInterval(state.timer.interval);state.timer.running=false;}},1000);
-  };
-  document.getElementById('ctl-timer-pause').onclick=function(){
-    state.timer.running=false;clearInterval(state.timer.interval);
-  };
-  document.getElementById('ctl-timer-reset').onclick=function(){
-    state.timer.val=parseInt(document.getElementById('ctl-timer-len').value)||60;timerSyncViews();
-  };
-
-  // INIT: On Hash Change/Load
-  window.onhashchange=function(){
-    if(location.hash==="#audience") switchSection("audience-display");
-    else if(location.hash==="#scoreboard")switchSection("scoreboard-display");
-    else if(location.hash==="#control")switchSection("control-panel");
-    else switchSection("main-menu");
-  };
-  window.onload = window.onhashchange;
-
+    state.timer.interval=setInterval(()=>{
+      state.timer.val--; 
+      timerSyncViews();
+      if(state.timer.val<=0){
+        clearInterval(state.timer.interval);
+        state.timer.running=false;
+      }
+    },1000);
+  });
+  
+  document.getElementById('ctl-timer-pause').addEventListener('click', function(){
+    state.timer.running=false;
+    clearInterval(state.timer.interval);
+  });
+  
+  document.getElementById('ctl-timer-reset').addEventListener('click', function(){
+    state.timer.val=parseInt(document.getElementById('ctl-timer-len').value)||60;
+    timerSyncViews();
+  });
 </script>
 </body>
 </html>
