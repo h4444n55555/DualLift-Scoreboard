@@ -1,41 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>DualLift-Scoreboard Prototype</title>
+<title>DualLift-Scoreboard v2</title>
 <style>
-  body { font-family: Arial, sans-serif; line-height: 1.5; margin: 20px; background: #f9f9f9; }
-  #app { max-width: 1200px; margin: auto; }
-  header { text-align: center; margin-bottom: 1rem; }
-  section { margin-bottom: 1.5rem; padding: 1rem; background: #fff; border-radius: 8px; box-shadow: 0 2px 6px #ccc; }
-  label { display: block; margin-top: 0.5rem; }
-  input, select, button { margin-top: 0.25rem; padding: 0.4rem; width: 100%; max-width: 300px; }
-  .flex-row { display: flex; gap: 1rem; }
-  .half { flex: 1; }
-  table { border-collapse: collapse; width: 100%; }
-  th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: center; }
-  th { background-color: #eee; }
-  .plate { width: 40px; height: 15px; margin: 0 2px; border-radius: 3px; display: inline-block; }
-  .red { background: #d32f2f; }
-  .blue { background: #1976d2; }
-  .yellow { background: #fbc02d; }
-  .green { background: #388e3c; }
-  .white { background: #fafafa; border: 1px solid #999; }
-  .gray { background: #666; }
+  body { font-family: Arial, sans-serif; background: #fafafa; margin: 0; padding: 0; }
+  #app { max-width: 1200px; margin: 0 auto; padding: 10px; }
+  header { text-align: center; padding: 1rem 0; background: #1976d2; color: white; }
+  nav { display: flex; background: #eee; border-bottom: 1px solid #ccc; }
+  nav button { flex:1; padding: 12px; border:none; background:none; cursor:pointer; font-weight: bold; }
+  nav button.active { background: #1976d2; color: white; }
+  section { padding: 10px; background: white; min-height: 400px; display: none; }
+  section.active { display: block; }
+  label { display:block; margin-top: 0.5rem; }
+  input, select, button { margin-top: 0.25rem; padding: 6px; width: 100%; max-width: 300px; box-sizing: border-box; }
+  table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+  th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+  th { background: #f0f0f0; }
   .decision-good { color: green; font-weight: bold; }
   .decision-no { color: red; font-weight: bold; }
   .decision-review { color: goldenrod; font-weight: bold; }
-  #barbell-visual { margin-top: 1rem; height: 50px; display: flex; align-items: center; }
+  #barbell-visual { margin: 1rem 0; display: flex; align-items: center; }
+  .plate { border-radius: 3px; margin-right: 4px; padding: 2px 6px; color: white; font-weight: bold; font-size: 0.8rem; min-width: 32px; text-align: center; }
+  .red { background: #d32f2f; }
+  .blue { background: #1976d2; }
+  .yellow { background: #fbc02d; color:#333; }
+  .green { background: #388e3c; }
+  .white { background: #fafafa; color:#333; border: 1px solid #999; }
+  .gray { background: #666; }
+  .timer-display { font-size: 3rem; font-weight: bold; text-align: center; margin: 1rem 0; }
+  fieldset { border: 1px solid #ccc; padding: 10px; margin-top: 1rem; }
+  button.control-btn { max-width: 150px; margin-top: 10px; }
+  .flex-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .flex-grow { flex-grow: 1; min-width: 280px; }
+  @media(min-width: 700px) {
+    .half { flex: 1; }
+  }
 </style>
 </head>
 <body>
-<div id="app">
-  <header><h1>DualLift-Scoreboard Prototype</h1></header>
 
-  <!-- Step 1: Event and Competition Setup -->
-  <section id="event-setup">
-    <h2>1. Setup Competition</h2>
+<div id="app">
+  <header><h1>DualLift-Scoreboard</h1></header>
+  <nav>
+    <button id="tab-setup" class="active">Setup</button>
+    <button id="tab-audience">Audience Display</button>
+    <button id="tab-scoreboard">Scoreboard</button>
+    <button id="tab-control">Control Panel</button>
+  </nav>
+
+  <!-- Setup Screen -->
+  <section id="setup-section" class="active">
+    <h2>Competition Setup</h2>
     <label>
       Select Event Type:
       <select id="event-type">
@@ -49,123 +66,175 @@
       <input type="text" id="competition-name" placeholder="Enter competition name" />
     </label>
     <label>
-      Enter Weight Categories (comma separated, e.g., 61,73,81):
-      <input type="text" id="weight-categories" placeholder="e.g., 61,73,81" />
+      Weight Categories (comma separated):
+      <input type="text" id="weight-categories" placeholder="e.g. 61,73,81" />
     </label>
-    <button onclick="startRegistration()">Start Lifter Registration</button>
+
+    <button id="start-registration-btn">Start Registration</button>
   </section>
 
-  <!-- Step 2: Lifter Registration -->
-  <section id="lifter-registration" style="display:none;">
-    <h2>2. Register Lifters</h2>
-    <form id="lifter-form">
-      <label>Name:<input type="text" id="lifter-name" required /></label>
-      <label>Team/College:<input type="text" id="lifter-team" /></label>
-      <label>Bodyweight (kg):<input type="number" id="lifter-bodyweight" step="0.1" required /></label>
-      <label>Date of Birth:<input type="date" id="lifter-dob" required /></label>
-      <label>Category:
-        <select id="lifter-category" required></select>
-      </label>
-      <label>Division:
-        <select id="lifter-division" required>
-          <option value="A">A</option>
-          <option value="B">B</option>
-        </select>
-      </label>
-      <label>First Lifts (comma separated):
-        <input type="text" id="lifter-first-lifts" placeholder="e.g. 100,120 (adjust form dynamically later)" />
-      </label>
-      <button type="submit">Add Lifter</button>
-    </form>
-    <hr />
-    <h3>Registered Lifters</h3>
-    <table id="lifters-table">
+  <!-- Audience Display -->
+  <section id="audience-section">
+    <h2>Audience Display</h2>
+    <div>
+      <strong>Current Lifter:</strong> <span id="current-lifter-name-aud">---</span><br/>
+      <strong>Attempt Weight:</strong> <span id="current-weight-aud">---</span> kg
+    </div>
+    <div id="barbell-visual"></div>
+    <div class="timer-display" id="timer-display-aud">60</div>
+    <div><strong>Referee Decision:</strong> <span id="referee-decision-aud">Waiting</span></div>
+  </section>
+
+  <!-- Scoreboard -->
+  <section id="scoreboard-section">
+    <h2>Scoreboard</h2>
+    <table>
       <thead>
-        <tr><th>#</th><th>Name</th><th>Team</th><th>Bodyweight</th><th>DOB</th><th>Category</th><th>Division</th><th>First Lifts</th></tr>
+        <tr>
+          <th>#</th><th>Name</th><th>DOB</th><th>Team</th><th>Division</th><th>Category</th>
+          <th>Attempt 1</th><th>Attempt 2</th><th>Attempt 3</th>
+          <th>Total</th><th>Sinclair/Wilks</th><th>Rank</th>
+        </tr>
       </thead>
-      <tbody></tbody>
+      <tbody id="scoreboard-tbody"></tbody>
     </table>
-    <button onclick="startCompetition()">Start Competition</button>
   </section>
 
-  <!-- Step 3: Competition Interface -->
-  <section id="competition" style="display:none;">
-    <h2>3. Competition Interface</h2>
-    <div class="flex-row">
-      <!-- Audience Display -->
-      <div class="half" id="audience-display">
-        <h3>Audience Display</h3>
-        <div><strong>Current Lifter:</strong> <span id="current-lifter-name">---</span></div>
-        <div><strong>Attempt Weight:</strong> <span id="current-attempt-weight">---</span> kg</div>
-        <div><strong>Referee Decision:</strong> <span id="current-decision">Waiting</span></div>
-        <div id="barbell-visual"></div>
-      </div>
+  <!-- Control Panel -->
+  <section id="control-section">
+    <h2>Control Panel</h2>
 
-      <!-- Detailed Scoreboard -->
-      <div class="half" id="scoreboard-display">
-        <h3>Scoreboard</h3>
-        <table id="scoreboard-table">
-          <thead>
-            <tr>
-              <th>#</th><th>Name</th><th>DOB</th><th>Team</th><th>Division</th>
-              <th>Attempt 1</th><th>Attempt 2</th><th>Attempt 3</th><th>Total</th><th>Rank</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+    <div id="registration-area" style="display:none;">
+      <h3>Register Lifters</h3>
+      <form id="lifter-form">
+        <label>Name:<input type="text" id="lifter-name" required /></label>
+        <label>Team/College:<input type="text" id="lifter-team" /></label>
+        <label>Bodyweight (kg):<input type="number" id="lifter-bodyweight" step="0.1" required /></label>
+        <label>Date of Birth:<input type="date" id="lifter-dob" required /></label>
+        <label>Category:<select id="lifter-category"></select></label>
+        <label>Division:
+          <select id="lifter-division" required>
+            <option value="A">A</option><option value="B">B</option>
+          </select>
+        </label>
+
+        <!-- Lift inputs based on event -->
+        <div id="olympic-firstlifts-input" style="display:none;">
+          <label>First Snatch (kg):<input type="number" id="first-snatch" step="0.5" min="0"/></label>
+          <label>First Clean & Jerk (kg):<input type="number" id="first-cj" step="0.5" min="0"/></label>
+        </div>
+
+        <div id="powerlifting-firstlifts-input" style="display:none;">
+          <label>First Squat (kg):<input type="number" id="first-squat" step="0.5" min="0"/></label>
+          <label>First Bench Press (kg):<input type="number" id="first-bench" step="0.5" min="0"/></label>
+          <label>First Deadlift (kg):<input type="number" id="first-deadlift" step="0.5" min="0"/></label>
+        </div>
+
+        <button type="submit">Add Lifter</button>
+      </form>
+
+      <hr/>
+      <h3>Registered Lifters</h3>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Name</th><th>Team</th><th>Bodyweight</th><th>DOB</th><th>Category</th><th>Division</th><th>1st Lifts Total</th></tr>
+        </thead>
+        <tbody id="lifters-tbody"></tbody>
+      </table>
+
+      <button id="start-competition-btn" disabled>Start Competition</button>
+    </div>
+
+    <div id="attempt-logging-area" style="display:none;">
+      <h3>Log Attempts for: <span id="current-lifter-name-control"></span></h3>
+      <div><strong>Current Attempt Weight:</strong> <span id="current-weight-control">---</span> kg</div>
+      <div id="barbell-visual-control"></div>
+
+      <div>
+        <button class="control-btn" data-status="good">Good Lift</button>
+        <button class="control-btn" data-status="no">No Lift</button>
+        <button class="control-btn" data-status="review">Under Review</button>
       </div>
     </div>
 
-    <!-- Attempt Logging -->
     <fieldset>
-      <legend>Log Attempt</legend>
-      <label>Weight (kg): <input type="number" id="attempt-weight" step="0.5" /></label>
-      <label>Status:
-        <select id="attempt-status">
-          <option value="good">Good Lift</option>
-          <option value="no">No Lift</option>
-          <option value="review">Under Review</option>
-        </select>
-      </label>
-      <button onclick="logAttempt()">Submit Attempt</button>
-    </fieldset>
-
-    <!-- Timer -->
-    <fieldset>
-      <legend>Timer</legend>
-      <label>Time (seconds):
-        <input type="number" id="timer-length" value="60" min="10" max="180" />
-      </label>
-      <button onclick="startTimer()">Start</button>
-      <button onclick="stopTimer()">Stop</button>
-      <button onclick="resetTimer()">Reset</button>
-      <div id="timer-display" style="font-size: 2rem; margin-top: 0.5rem;">60</div>
+      <legend>Timer Controls</legend>
+      <label>Time (seconds): <input type="number" id="timer-length-control" value="60" min="10" max="180"></label><br/>
+      <button id="timer-start-btn">Start</button>
+      <button id="timer-pause-btn">Pause</button>
+      <button id="timer-reset-btn">Reset</button>
+      <div class="timer-display" id="timer-display-control">60</div>
     </fieldset>
   </section>
 </div>
 
 <script>
-  const lifters = [];
+  // State variables
+  let lifters = [];
   let currentEvent = '';
   let currentCategories = [];
   let currentLifterIndex = 0;
-  let attemptsPerLifter = {};
-  let timerInterval;
-  let timerRemaining = 0;
+  let timerValue = 60;
+  let timerInterval = null;
+  let timerRunning = false;
 
-  function startRegistration() {
+  // Sinclair calculation constants
+  const SINCLAIR_COEFFICIENTS = {
+    2024: {
+      M: { a: 0.75194503, b: 175.508 },
+      F: { a: 0.783497476, b: 153.655 }
+    }
+  };
+
+  // Wilks formula constants (IPF formula version)
+  const WILKS_CONSTANTS = {
+    M: { a: -216.0475144, b: 16.2606339, c: -0.002388645, d: -0.00113732, e: 7.01863e-06, f: -1.291e-08 },
+    F: { a: 594.31747775582, b: -27.23842536447, c: 0.82112226871, d: -0.00930733913, e: 4.731582e-05, f: -9.054e-08 }
+  };
+
+  // DOM references
+  const tabButtons = {
+    setup: document.getElementById('tab-setup'),
+    audience: document.getElementById('tab-audience'),
+    scoreboard: document.getElementById('tab-scoreboard'),
+    control: document.getElementById('tab-control')
+  };
+  const sections = {
+    setup: document.getElementById('setup-section'),
+    audience: document.getElementById('audience-section'),
+    scoreboard: document.getElementById('scoreboard-section'),
+    control: document.getElementById('control-section')
+  };
+
+  function switchTab(tab) {
+    Object.keys(sections).forEach(key => {
+      sections[key].classList.toggle('active', key === tab);
+      tabButtons[key].classList.toggle('active', key === tab);
+    });
+  }
+
+  // Initialize event listeners for tab switching
+  Object.entries(tabButtons).forEach(([key, btn]) => {
+    btn.addEventListener('click', () => switchTab(key));
+  });
+
+  // Setup phase
+  document.getElementById('start-registration-btn').addEventListener('click', () => {
     const eventType = document.getElementById('event-type').value;
     const compName = document.getElementById('competition-name').value.trim();
-    const categoriesInput = document.getElementById('weight-categories').value.trim();
+    const catInput = document.getElementById('weight-categories').value.trim();
 
-    if (!eventType || !compName || !categoriesInput) {
-      alert('Please fill all setup fields.');
+    if (!eventType || !compName || !catInput) {
+      alert('Please fill all competition setup fields!');
       return;
     }
     currentEvent = eventType;
-    currentCategories = categoriesInput.split(',').map(c => c.trim());
+    currentCategories = catInput.split(',').map(x => x.trim());
 
-    // Populate lifter category select dynamically
+    // Show appropriate first lifts input
+    document.getElementById('olympic-firstlifts-input').style.display = (currentEvent === 'olympic') ? 'block' : 'none';
+    document.getElementById('powerlifting-firstlifts-input').style.display = (currentEvent === 'powerlifting') ? 'block' : 'none';
+
     const categorySelect = document.getElementById('lifter-category');
     categorySelect.innerHTML = '';
     currentCategories.forEach(cat => {
@@ -175,11 +244,12 @@
       categorySelect.appendChild(option);
     });
 
-    document.getElementById('event-setup').style.display = 'none';
-    document.getElementById('lifter-registration').style.display = 'block';
-  }
+    document.getElementById('registration-area').style.display = 'block';
+    switchTab('control');
+  });
 
-  document.getElementById('lifter-form').addEventListener('submit', function(e) {
+  // Lifter registration
+  document.getElementById('lifter-form').addEventListener('submit', e => {
     e.preventDefault();
     const name = document.getElementById('lifter-name').value.trim();
     const team = document.getElementById('lifter-team').value.trim();
@@ -187,233 +257,306 @@
     const dob = document.getElementById('lifter-dob').value;
     const category = document.getElementById('lifter-category').value;
     const division = document.getElementById('lifter-division').value;
-    const firstLiftsInput = document.getElementById('lifter-first-lifts').value.trim();
-    const firstLifts = firstLiftsInput ? firstLiftsInput.split(',').map(x => parseFloat(x)) : [];
 
-    lifters.push({name, team, bodyweight, dob, category, division, firstLifts});
+    let firstLifts = [];
+    if (currentEvent === 'olympic') {
+      let snatch = parseFloat(document.getElementById('first-snatch').value) || 0;
+      let cj = parseFloat(document.getElementById('first-cj').value) || 0;
+      firstLifts = [snatch, cj];
+    } else if(currentEvent === 'powerlifting') {
+      let squat = parseFloat(document.getElementById('first-squat').value) || 0;
+      let bench = parseFloat(document.getElementById('first-bench').value) || 0;
+      let deadlift = parseFloat(document.getElementById('first-deadlift').value) || 0;
+      firstLifts = [squat, bench, deadlift];
+    }
+
+    let totalFirst = firstLifts.reduce((a,b)=> a+b, 0);
+
+    lifters.push({
+      name, team, bodyweight, dob, category, division,
+      firstLifts, totalFirst,
+      attempts: [],
+      total: 0,
+      rank: null,
+      sinclairWilks: 0
+    });
     updateLiftersTable();
-    this.reset();
+    e.target.reset();
+    document.getElementById('start-competition-btn').disabled = false;
   });
 
-  function updateLiftersTable() {
-    const tbody = document.querySelector('#lifters-table tbody');
+  function updateLiftersTable(){
+    const tbody = document.getElementById('lifters-tbody');
     tbody.innerHTML = '';
-    lifters.forEach((lifter, i) => {
+    lifters.forEach((l, idx) => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${i+1}</td>
-        <td>${lifter.name}</td>
-        <td>${lifter.team}</td>
-        <td>${lifter.bodyweight.toFixed(1)}</td>
-        <td>${lifter.dob}</td>
-        <td>${lifter.category}</td>
-        <td>${lifter.division}</td>
-        <td>${lifter.firstLifts.join(', ')}</td>
-      `;
+      tr.innerHTML = `<td>${idx+1}</td><td>${l.name}</td><td>${l.team}</td><td>${l.bodyweight.toFixed(1)}</td><td>${l.dob}</td><td>${l.category}</td><td>${l.division}</td><td>${l.totalFirst.toFixed(1)}</td>`;
       tbody.appendChild(tr);
     });
   }
 
-  function startCompetition() {
-    if (lifters.length === 0) {
-      alert('Register at least one lifter.');
+  // Start competition button
+  document.getElementById('start-competition-btn').addEventListener('click', () => {
+    if(lifters.length === 0) {
+      alert('Add lifters before starting competition!');
       return;
     }
-    assignStartingNumbers();
-    document.getElementById('lifter-registration').style.display = 'none';
-    document.getElementById('competition').style.display = 'block';
-    showCurrentLifter();
-    updateScoreboard();
-    resetTimer();
-  }
-
-  function assignStartingNumbers() {
-    // Sort by sum of first lifts descending
-    lifters.sort((a, b) => {
-      const totalA = a.firstLifts.reduce((a,b) => a+b, 0);
-      const totalB = b.firstLifts.reduce((a,b) => a+b, 0);
-      return totalB - totalA;
-    });
-    lifters.forEach((lifter, i) => {
-      lifter.startingNumber = i + 1;
-      lifter.attempts = [null,null,null];
-      lifter.total = 0;
-      lifter.rank = null;
-    });
+    // Sort lifters by totalFirst descending and assign starting numbers
+    lifters.sort((a,b) => b.totalFirst - a.totalFirst);
+    lifters.forEach((l, idx) => l.startingNumber = idx+1);
     currentLifterIndex = 0;
-  }
-
-  function showCurrentLifter() {
-    const lifter = lifters[currentLifterIndex];
-    if (!lifter) return;
-    document.getElementById('current-lifter-name').textContent = lifter.name;
-    document.getElementById('current-attempt-weight').textContent = '0';
-    document.getElementById('current-decision').textContent = 'Waiting';
-    updateBarbellVisual(0);
-  }
-
-  function logAttempt() {
-    const weightInput = document.getElementById('attempt-weight');
-    const statusInput = document.getElementById('attempt-status');
-    const weight = parseFloat(weightInput.value);
-    const status = statusInput.value;
-    if (isNaN(weight) || weight <= 0) {
-      alert('Please enter a valid weight.');
-      return;
-    }
-    const lifter = lifters[currentLifterIndex];
-    if (!lifter) return;
-
-    // Log attempt at first empty slot
-    const attemptIndex = lifter.attempts.findIndex(a => a === null);
-    if (attemptIndex === -1) {
-      alert('All attempts logged for this lifter.');
-      return;
-    }
-    lifter.attempts[attemptIndex] = {weight, status};
-    lifter.total += (status === 'good' ? weight : 0);
-
-    // Update UI
     updateScoreboard();
-    updateBarbellVisual(weight);
-    document.getElementById('current-attempt-weight').textContent = weight.toFixed(1);
-    document.getElementById('current-decision').textContent = statusText(status);
+    switchTab('control');
+    showAttemptLoggingForCurrent();
+    document.getElementById('registration-area').style.display = 'none';
+    document.getElementById('attempt-logging-area').style.display = 'block';
+    updateAudienceDisplay();
+  });
 
-    // Move to next lifter if all attempts done
-    if (lifter.attempts.every(a => a !== null)) {
-      if (currentLifterIndex < lifters.length - 1) {
-        currentLifterIndex++;
-        showCurrentLifter();
-      } else {
-        calculateRanks();
-        alert('All attempts logged. Competition complete!');
-      }
+  // Show attempt logging controls for current lifter
+  function showAttemptLoggingForCurrent() {
+    const lifter = lifters[currentLifterIndex];
+    if(!lifter) return;
+    document.getElementById('current-lifter-name-control').textContent = lifter.name;
+    // Determine next attempt weight to display: for Olympic, sum or respective; for powerlifting, TBD by user input
+    // Here we just show 0 initially and update on attempt log
+    document.getElementById('current-weight-control').textContent = '---';
+    updateBarbellVisualControl(0);
+    setRefereeDecision('Waiting');
+  }
+
+  // Log attempts (via buttons)
+  document.querySelectorAll('#attempt-logging-area button.control-btn').forEach(btn=>{
+    btn.addEventListener('click', (e) => {
+      const status = e.target.getAttribute('data-status');
+      logAttempt(status);
+    });
+  });
+
+  function logAttempt(status) {
+    if(currentLifterIndex >= lifters.length) return;
+
+    // Use the weight shown on control (simulate input for now by using last logged or first lift)
+    const weightText = document.getElementById('current-weight-control').textContent;
+    let weight = parseFloat(weightText);
+    // For now if no weight, we can default to first attempt weight or 0
+    if(isNaN(weight)) weight = lifters[currentLifterIndex].firstLifts[0] || 0;
+
+    const lifter = lifters[currentLifterIndex];
+
+    // Log attempt details
+    let attemptNum = lifter.attempts.length;
+
+    // Limit attempts to 3 per lifter per event (adjust if needed for event type)
+    if (attemptNum >= 3) {
+      alert('All attempts logged for this lifter');
+      return;
     }
 
-    // Reset inputs for next attempt
-    weightInput.value = '';
-    statusInput.value = 'good';
-    resetTimer();
+    lifter.attempts.push({weight,status});
+    if(status === 'good') lifter.total += weight;
+
+    updateScoreboard();
+
+    // Move to next lifter or finish
+    currentLifterIndex++;
+    if(currentLifterIndex >= lifters.length) {
+      finalizeCompetition();
+    } else {
+      showAttemptLoggingForCurrent();
+      updateAudienceDisplay();
+    }
   }
 
-  function statusText(status) {
-    if(status === 'good') return 'Good Lift';
-    if(status === 'no') return 'No Lift';
-    if(status === 'review') return 'Under Review';
-    return '';
+  // Update Audience Display info and barbell visualization
+  function updateAudienceDisplay() {
+    if(currentLifterIndex >= lifters.length) {
+      document.getElementById('current-lifter-name-aud').textContent = 'Competition Finished';
+      document.getElementById('current-weight-aud').textContent = '-';
+      document.getElementById('referee-decision-aud').textContent = '-';
+      updateBarbellVisual(0, 'barbell-visual');
+      return;
+    }
+    const lifter = lifters[currentLifterIndex];
+    document.getElementById('current-lifter-name-aud').textContent = lifter.name;
+    const nextWeight = lifter.firstLifts[0] || 0;
+    document.getElementById('current-weight-aud').textContent = nextWeight.toFixed(1);
+    updateBarbellVisual(nextWeight, 'barbell-visual');
+    document.getElementById('referee-decision-aud').textContent = 'Waiting';
   }
 
+  // Update Scoreboard
   function updateScoreboard() {
-    const tbody = document.querySelector('#scoreboard-table tbody');
+    const tbody = document.getElementById('scoreboard-tbody');
     tbody.innerHTML = '';
-    lifters.forEach((lifter, i) => {
-      const tr = document.createElement('tr');
-      const attemptsHtml = lifter.attempts.map(attempt => {
-        if (!attempt) return '-';
+    lifters.forEach(lifter => {
+      let attemptsDisplay = [null,null,null];
+      lifter.attempts.forEach((a,i)=> {
+        if(i>2) return;
         let cls = '';
-        if (attempt.status === 'good') cls = 'decision-good';
-        else if (attempt.status === 'no') cls = 'decision-no';
-        else if (attempt.status === 'review') cls = 'decision-review';
-        return `<span class="${cls}">${attempt.weight} kg</span>`;
-      }).join('</td><td>');
-      tr.innerHTML = `
+        if (a.status === 'good') cls = 'decision-good';
+        else if (a.status === 'no') cls = 'decision-no';
+        else if (a.status === 'review') cls = 'decision-review';
+        attemptsDisplay[i] = `<span class="${cls}">${a.weight} kg</span>`;
+      });
+      while(attemptsDisplay.length < 3) attemptsDisplay.push('-');
+
+      // Calculate Sinclair or Wilks score depending on event and gender (assuming male for demo)
+      let score = 0;
+      if(currentEvent === 'olympic') {
+        score = calculateSinclair(lifter.total, lifter.bodyweight, 'M');
+      } else if(currentEvent === 'powerlifting') {
+        score = calculateWilks(lifter.total, lifter.bodyweight, 'M');
+      }
+      lifter.sinclairWilks = score;
+
+      tbody.innerHTML += `<tr>
         <td>${lifter.startingNumber}</td>
         <td>${lifter.name}</td>
         <td>${lifter.dob}</td>
         <td>${lifter.team}</td>
         <td>${lifter.division}</td>
-        <td>${lifter.attempts[0] ? attemptsHtml.split('</td><td>')[0] : '-'}</td>
-        <td>${lifter.attempts[1] ? attemptsHtml.split('</td><td>')[1] : '-'}</td>
-        <td>${lifter.attempts[2] ? attemptsHtml.split('</td><td>')[2] : '-'}</td>
-        <td>${lifter.total.toFixed(1)}</td>
-        <td>${lifter.rank !== null ? lifter.rank : '-'}</td>
-      `;
-      tbody.appendChild(tr);
+        <td>${lifter.category}</td>
+        <td>${attemptsDisplay[0]}</td><td>${attemptsDisplay[1]}</td><td>${attemptsDisplay[2]}</td>
+        <td>${lifter.total.toFixed(1)}</td><td>${score.toFixed(2)}</td><td>${lifter.rank || '-'}</td>
+      </tr>`;
     });
   }
 
-  function calculateRanks() {
+  // Finalize competition: assign ranks after all attempts logged
+  function finalizeCompetition() {
     lifters.sort((a,b) => b.total - a.total);
-    lifters.forEach((lifter,i) => {
-      lifter.rank = i + 1;
-    });
+    lifters.forEach((l, idx) => l.rank = idx+1);
     updateScoreboard();
+    alert('Competition Complete! Final ranks updated.');
+    switchTab('scoreboard');
   }
 
-  // Timer functions
-  function startTimer() {
-    const length = parseInt(document.getElementById('timer-length').value,10);
-    timerRemaining = length;
-    document.getElementById('timer-display').textContent = timerRemaining;
-    stopTimer();
-    timerInterval = setInterval(() => {
-      timerRemaining--;
-      document.getElementById('timer-display').textContent = timerRemaining;
-      if(timerRemaining <= 0) stopTimer();
-    },1000);
+  // Timer logic
+  function updateTimerDisplay(timeSec, id) {
+    document.getElementById(id).textContent = timeSec;
   }
-  function stopTimer() {
+  function startTimer() {
+    if(timerRunning) return;
+    timerRunning = true;
+    timerInterval = setInterval(() => {
+      if(timerValue <= 0) {
+        stopTimer();
+        return;
+      }
+      timerValue--;
+      updateTimerDisplay(timerValue, 'timer-display-control');
+      updateTimerDisplay(timerValue, 'timer-display-aud');
+    }, 1000);
+  }
+  function pauseTimer() {
+    timerRunning = false;
     clearInterval(timerInterval);
   }
   function resetTimer() {
-    stopTimer();
-    const length = parseInt(document.getElementById('timer-length').value,10);
-    timerRemaining = length;
-    document.getElementById('timer-display').textContent = timerRemaining;
+    pauseTimer();
+    timerValue = parseInt(document.getElementById('timer-length-control').value, 10) || 60;
+    updateTimerDisplay(timerValue, 'timer-display-control');
+    updateTimerDisplay(timerValue, 'timer-display-aud');
   }
 
-  // Visual Barbell Display with plates (simplified)
-  function updateBarbellVisual(weight) {
-    const barbellDiv = document.getElementById('barbell-visual');
-    barbellDiv.innerHTML = ''; // Clear
+  document.getElementById('timer-start-btn').addEventListener('click', startTimer);
+  document.getElementById('timer-pause-btn').addEventListener('click', pauseTimer);
+  document.getElementById('timer-reset-btn').addEventListener('click', resetTimer);
 
-    if (weight < 20) {
-      barbellDiv.textContent = 'No plates loaded (weight < barbell)';
+  // Update barbell visual on control and audience displays
+  function updateBarbellVisual(weight, containerId='barbell-visual-control') {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    const barWeight = 20;
+    const collarWeight = 5;
+    if(weight < barWeight + collarWeight){
+      container.textContent = 'No plates loaded';
+      return;
+    }
+    const weightPerSide = (weight - barWeight - collarWeight)/2;
+    if(weightPerSide <= 0){
+      container.textContent = 'No plates loaded';
       return;
     }
 
-    const plates = calculatePlates(weight);
-    // Show collar first
+    // Plates in loading order: 25,20,15,10,5,2.5,collar,2,1.5,1,0.5 (simplified colors)
+    // Collar included separately in display as fixed gray plate
+    const plateDefs = [
+      {weight:25,color:'red'},
+      {weight:20,color:'blue'},
+      {weight:15,color:'yellow'},
+      {weight:10,color:'green'},
+      {weight:5,color:'white'},
+      {weight:2.5,color:'red'},
+      // collar position here visually separate
+      {weight:2,color:'blue'},
+      {weight:1.5,color:'yellow'},
+      {weight:1,color:'green'},
+      {weight:0.5,color:'white'}
+    ];
+
+    // Calculate plates to load per side
+    let remaining = weightPerSide;
+    let plates = [];
+    for(let pd of plateDefs){
+      while(remaining >= pd.weight - 1e-6){ // tolerance for float math
+        plates.push(pd);
+        remaining -= pd.weight;
+        remaining = Math.round(remaining*100)/100;
+      }
+    }
+
+    // Show plates outside collar first (biggest first)
+    const outsidePlates = plates.filter(p=>p.weight >= 2.5);
+    outsidePlates.sort((a,b) => b.weight - a.weight);
+
+    // Collar lock
     const collar = document.createElement('span');
     collar.className = 'plate gray';
-    collar.title = '2.5 kg Collar Lock';
-    collar.textContent = 'Col';
-    barbellDiv.appendChild(collar);
+    collar.textContent = 'Collar';
+    collar.title = '2.5 kg collar lock';
+    container.appendChild(collar);
 
-    plates.forEach(p => {
-      const plate = document.createElement('span');
-      plate.className = 'plate ' + p.color;
-      plate.title = `${p.weight} kg plate`;
-      plate.textContent = p.weight;
-      barbellDiv.appendChild(plate);
+    // Outside plates (descending)
+    outsidePlates.forEach(pl => {
+      const sp = document.createElement('span');
+      sp.className = 'plate '+pl.color;
+      sp.textContent = pl.weight;
+      sp.title = pl.weight + ' kg plate outside collar';
+      container.appendChild(sp);
+    });
+
+    // Inside plates (smallest below 2.5)
+    const insidePlates = plates.filter(p=>p.weight < 2.5);
+    insidePlates.sort((a,b) => a.weight - b.weight);
+    insidePlates.forEach(pl => {
+      const sp = document.createElement('span');
+      sp.className = 'plate '+pl.color;
+      sp.textContent = pl.weight;
+      sp.title = pl.weight + ' kg plate inside collar';
+      container.appendChild(sp);
     });
   }
 
-  // Plate calculation - returns array of plates to be loaded on one sleeve
-  function calculatePlates(totalWeight) {
-    const barWeight = 20;
-    const collarWeight = 5;
-    let weightPerSide = (totalWeight - barWeight - collarWeight) / 2;
-    if(weightPerSide <= 0) return [];
+  // Helper functions for Sinclair and Wilks calculations
+  function calculateSinclair(total, bodyweight, gender='M'){
+    if(total <= 0) return 0;
+    let genderKey = gender === 'M' ? 'M' : 'F';
+    let {a,b} = SINCLAIR_COEFFICIENTS[2024][genderKey];
+    if(bodyweight > b) return total;
+    let coeff = Math.pow(10, a * (Math.log10(bodyweight / b)) ** 2);
+    return total * coeff;
+  }
 
-    // Plates in order from smallest to largest for convenience; will reverse for display
-    const plateOptions = [
-      {weight: 0.5, color: 'white'}, {weight: 1, color: 'green'}, {weight: 1.5, color: 'yellow'},
-      {weight: 2, color: 'blue'}, {weight: 2.5, color: 'red'}, {weight: 5, color: 'white'},
-      {weight: 10, color: 'green'}, {weight: 15, color: 'yellow'}, {weight: 20, color: 'blue'},
-      {weight: 25, color: 'red'}
-    ].sort((a,b) => b.weight - a.weight);
-
-    const plates = [];
-    plateOptions.forEach(p => {
-      while(weightPerSide >= p.weight) {
-        plates.push(p);
-        weightPerSide -= p.weight;
-        weightPerSide = Math.round(weightPerSide * 100) / 100; // avoid floating issues
-      }
-    });
-    return plates.reverse(); // largest plate farthest from collar
+  function calculateWilks(total, bodyweight, gender='M'){
+    if(total <= 0) return 0;
+    let c = WILKS_CONSTANTS[gender === 'M' ? 'M' : 'F'];
+    let bw = bodyweight;
+    let denom = c.a + c.b * bw + c.c * bw ** 2 + c.d * bw ** 3 + c.e * bw ** 4 + c.f * bw ** 5;
+    return total * (500 / denom);
   }
 </script>
+
 </body>
 </html>
