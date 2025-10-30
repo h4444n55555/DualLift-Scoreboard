@@ -192,18 +192,27 @@
   }
   
   // UI Init: Switch Section
-  function switchSection(id) {
-    document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
-    document.querySelectorAll('nav a').forEach(a=>{
-      if(a.textContent.toLowerCase().includes(id.replace('-',' '))) a.classList.add('active');
-    });
-    // Sync views when switching
-    if(id==="audience-display") updateAudienceDisplay();
-    if(id==="scoreboard-display") updateScoreboard();
-    if(id==="control-panel"){ updateRegisteredLifters(); updateLoggingArea();}
+function switchSection(id) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  const section = document.getElementById(id);
+  section.classList.add('active');
+
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  document.querySelector(`nav a[onclick*="${id}"]`).classList.add('active');
+
+  if(!state.currentType && id !== 'main-menu'){
+    section.innerHTML = "<p style='padding: 1rem; color: red; font-weight: bold;'>Please go to Main Menu and set up competition first.</p>";
+    return;
   }
+
+  if(id === "audience-display") updateAudienceDisplay();
+  else if(id === "scoreboard-display") updateScoreboard();
+  else if(id === "control-panel") {
+    updateRegisteredLifters(); 
+    updateLoggingArea();
+  }
+}
+
 
   // Event setup
   document.getElementById('event-type-select').onchange=function(){
