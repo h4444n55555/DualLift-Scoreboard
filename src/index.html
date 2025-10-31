@@ -4,76 +4,552 @@
   <meta charset="UTF-8">
   <title>DualLift Competition Dashboard</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
   <style>
-    body { font-family: 'Segoe UI', arial, sans-serif; background: #f7f8fa; margin: 0; }
-    h1 { text-align: center; padding: 1rem; background: #1976d2; color: #fff; margin: 0 0 1rem 0;}
-    nav { background: #eee; padding: 0.5rem; display: flex; justify-content: center; gap:1rem; border-bottom: 1px solid #ddd; flex-wrap: wrap;}
-    nav a { padding: 0.5rem 1.2rem; border-radius: 4px; color: #1976d2; text-decoration: none; font-weight: bold; cursor: pointer;}
-    nav a.active { background: #1976d2; color: #fff;}
-    section { display:none; max-width: 1200px; margin: auto; margin-top: 1rem; background: #fff; padding: 1rem 1.5rem 2rem 1.5rem; border-radius: 8px; box-shadow: 0 3px 12px #ccc}
+    :root {
+      --bg-primary: #f7f8fa;
+      --bg-secondary: #fff;
+      --text-primary: #000;
+      --text-secondary: #666;
+      --border-color: #ddd;
+      --header-bg: #1976d2;
+      --header-text: #fff;
+      --filter-bg: #eee;
+    }
+    body.dark-mode {
+      --bg-primary: #1a1a1a;
+      --bg-secondary: #2d2d2d;
+      --text-primary: #e0e0e0;
+      --text-secondary: #b0b0b0;
+      --border-color: #444;
+      --header-bg: #0d47a1;
+      --header-text: #fff;
+      --filter-bg: #333;
+    }
+    body { 
+      font-family: 'Segoe UI', arial, sans-serif; 
+      background: var(--bg-primary); 
+      color: var(--text-primary);
+      margin: 0; 
+      transition: background-color 0.3s, color 0.3s;
+    }
+    h1 { 
+      text-align: center; 
+      padding: 1rem; 
+      background: var(--header-bg); 
+      color: var(--header-text); 
+      margin: 0 0 1rem 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .dark-mode-toggle {
+      background: rgba(255,255,255,0.2);
+      border: 2px solid var(--header-text);
+      color: var(--header-text);
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    .dark-mode-toggle:hover { background: rgba(255,255,255,0.3); }
+    nav { 
+      background: var(--filter-bg); 
+      padding: 0.5rem; 
+      display: flex; 
+      justify-content: center; 
+      gap:1rem; 
+      border-bottom: 1px solid var(--border-color); 
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 10;
+    }
+    nav a { 
+      padding: 0.5rem 1.2rem; 
+      border-radius: 4px; 
+      color: var(--header-bg); 
+      text-decoration: none; 
+      font-weight: bold; 
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    nav a.active { 
+      background: var(--header-bg); 
+      color: var(--header-text);
+    }
+    section { 
+      display:none; 
+      max-width: 1400px; 
+      margin: auto; 
+      margin-top: 1rem; 
+      background: var(--bg-secondary); 
+      padding: 1rem 1.5rem 2rem 1.5rem; 
+      border-radius: 8px; 
+      box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+    }
     section.active { display:block;}
-    label { display:block; margin-top: 0.5rem;}
-    input,select,button { margin-top: 0.2rem; padding: 0.45rem; font-size: 1rem;}
-    button { cursor: pointer; background: #1976d2; color: #fff; border: none; border-radius: 4px; font-weight: bold;}
+    label { display:block; margin-top: 0.5rem; color: var(--text-primary); }
+    input,select,button { 
+      margin-top: 0.2rem; 
+      padding: 0.45rem; 
+      font-size: 1rem;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+    input[type="file"] { cursor: pointer; }
+    button { 
+      cursor: pointer; 
+      background: var(--header-bg); 
+      color: var(--header-text); 
+      border: none; 
+      border-radius: 4px; 
+      font-weight: bold;
+      transition: background 0.3s;
+    }
     button:hover { background: #1565c0;}
     button:disabled { background: #ccc; cursor: not-allowed;}
-    table { border-collapse:collapse; width:100%; margin-top: 1rem;}
-    th,td { padding: 0.5rem 0.4rem; border: 1px solid #ddd; text-align:center;}
-    th { background: #f1f5fa;}
+    table { 
+      border-collapse:collapse; 
+      width:100%; 
+      margin-top: 1rem; 
+      font-size: 0.9rem;
+    }
+    th,td { 
+      padding: 0.4rem 0.3rem; 
+      border: 1px solid var(--border-color); 
+      text-align:center; 
+      vertical-align: middle;
+      color: var(--text-primary);
+    }
+    th { background: var(--filter-bg);}
+    td.good { background: #4caf50; color: #fff; font-weight: bold; }
+    td.no { background: #f44336; color: #fff; font-weight: bold; }
+    td.review { background: #ffc107; color: #000; font-weight: bold; }
+    td.empty { background: transparent; }
     .flex { display:flex; gap:2rem; flex-wrap:wrap;}
     .half { flex:1 1 350px; max-width: 560px;}
-    fieldset { border:1px solid #cacaca; padding: 10px; margin-bottom: 1.5rem;}
-    .decision-good{ background: #4caf50; color:white; font-weight:bold;}
-    .decision-good:hover { background: #45a049;}
-    .decision-no{ background: #f44336; color:white; font-weight:bold;}
-    .decision-no:hover { background: #da190b;}
-    .decision-review{ background: #ff9800; color:white; font-weight:bold;}
-    .decision-review:hover { background: #e68900;}
-    .barbell { margin:1rem 0; display: flex; align-items: center; flex-wrap: wrap;}
-    .plate { display: inline-block; border-radius: 2px; margin-right: 4px; font-size:1rem; min-width:40px; font-weight:bold; text-align:center; color:#fff; padding:4px 10px;}
-    .red{ background:#d32f2f;}
-    .blue{background:#1976d2;}
-    .yellow{background:#fbc02d; color:#333;}
-    .green{background: #42b983;}
-    .white{background:white; color:#111; border:1px solid #333;}
-    .gray{background:#727272;}
-    .timer-display{ font-size:3.5rem; text-align:center; font-weight:bold; margin:1rem 0; font-family: 'Courier New', monospace;}
+    fieldset { 
+      border:1px solid var(--border-color); 
+      padding: 10px; 
+      margin-bottom: 1.5rem;
+      background: var(--bg-primary);
+      border-radius: 4px;
+    }
+    legend { color: var(--text-primary); font-weight: bold; }
+    .audience-content { 
+      position: relative; 
+      height: 100vh; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      background: var(--bg-primary);
+    }
+    .audience-layout {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .barbell-container {
+      position: absolute;
+      left: 5%;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+    .barbell-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      height: 40px;
+    }
+    .collar {
+      width: 45px;
+      height: 30px;
+      background: #888;
+      color: #fff;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      font-size: 0.6rem;
+      margin: 0 2px;
+    }
+    .barbell-bar {
+      height: 8px;
+      background: linear-gradient(to right, #333 0%, #555 50%, #333 100%);
+      width: 60px;
+      border-radius: 4px;
+      margin: 0 2px;
+    }
+    .plates-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      margin: 0 4px;
+    }
+    .plate {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #fff;
+      border-radius: 2px;
+      font-size: 0.65rem;
+    }
+    .plate-25 { width: 50px; height: 12px; }
+    .plate-20 { width: 50px; height: 10px; }
+    .plate-15 { width: 45px; height: 9px; }
+    .plate-10 { width: 40px; height: 8px; }
+    .plate-5 { width: 35px; height: 7px; }
+    .plate-2-5 { width: 30px; height: 6px; }
+    .plate-2 { width: 28px; height: 5px; }
+    .plate-1-5 { width: 26px; height: 5px; }
+    .plate-1 { width: 24px; height: 4px; }
+    .plate-0-5 { width: 20px; height: 3px; }
+    .red { background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%); }
+    .blue { background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); }
+    .yellow { background: linear-gradient(135deg, #fbc02d 0%, #f57f17 100%); color: #333; }
+    .green { background: linear-gradient(135deg, #42b983 0%, #2d8a5e 100%); }
+    .white { background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%); color: #111; border: 1px solid #999; }
+    .warmup-display { 
+      font-size: 4rem; 
+      text-align: center; 
+      font-weight: bold; 
+      color: #ff9800; 
+      font-family: 'Courier New', monospace; 
+      margin: 3rem 0;
+    }
+    body.dark-mode .warmup-display { color: #ffb74d; }
+    .center-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+    .timer-display { 
+      font-size: 1.8rem; 
+      font-weight:bold; 
+      font-family: 'Courier New', monospace; 
+      color: var(--text-primary);
+    }
+    .attempt-weight { 
+      font-size: 2.2rem; 
+      font-weight: bold; 
+      color: var(--header-bg); 
+      text-align: center;
+    }
+    .lifter-info { 
+      text-align: center; 
+      color: var(--text-primary); 
+    }
+    .lifter-lastname { 
+      font-size: 2.5rem; 
+      font-weight: bold; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+    }
+    .lifter-firstname { 
+      font-size: 1.5rem; 
+      margin-top: 0.3rem; 
+    }
+    .lifter-team { 
+      font-size: 1rem; 
+      color: var(--text-secondary); 
+      margin-top: 0.5rem; 
+      font-style: italic; 
+    }
+    .audience-timer-section { display: block; }
+    .audience-timer-section.hidden { display: none; }
+    .audience-lights-section { display: none; }
+    .audience-lights-section.active { display: block; }
+    .referee-lights { 
+      display: flex; 
+      flex-direction: row; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 2rem; 
+      margin: 1.5rem 0; 
+    }
+    .ref-box { 
+      width: 100px; 
+      height: 140px; 
+      border-radius: 8px; 
+      background: #ccc; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-weight: bold; 
+      font-size: 2.5rem; 
+      color: #666; 
+      border: 3px solid #ccc;
+      transition: all 0.3s;
+    }
+    body.dark-mode .ref-box { background: #555; border-color: #555; color: #999; }
+    .ref-box.white { 
+      background: #f5f5f5; 
+      border: 3px solid #f5f5f5;
+      color: #000;
+    }
+    .ref-box.red { 
+      background: #d32f2f; 
+      border: 3px solid #d32f2f;
+      color: #fff;
+    }
+    .ref-box.yellow {
+      background: #ffc107;
+      border: 3px solid #ffc107;
+      color: #000;
+    }
+    .ref-box.neutral {
+      background: #ccc;
+      border: 3px solid #ccc;
+      color: #666;
+    }
+    body.dark-mode .ref-box.neutral { background: #555; border-color: #555; color: #999; }
     .filters{ margin: 1rem 0; display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;}
     .cat-header{ background: #e3ecfc; color:#1976d2; font-weight: bold; font-size: 1rem;}
+    body.dark-mode .cat-header { background: #1a3a52; color: #90caf9; }
     .div-header{ background: #faf7de; color:#bf9400;}
+    body.dark-mode .div-header { background: #3d3a1f; color: #ffb74d; }
     #registered-lifters table { width: 100%; border-collapse: collapse; }
-    #registered-lifters th, #registered-lifters td { border: 1px solid #ddd; padding: 0.3rem 0.5rem; font-size: 0.85rem; text-align: center; vertical-align: middle; }
-    .checkbox-group { margin-top: 0.5rem; max-height: 120px; overflow-y: auto; border: 1px solid #ddd; padding: 0.5rem; border-radius: 4px;}
-    .checkbox-group label { display: flex; align-items: center; margin-top: 0.2rem; margin-bottom: 0.2rem;}
+    #registered-lifters th, #registered-lifters td { border: 1px solid var(--border-color); padding: 0.3rem 0.5rem; font-size: 0.85rem; text-align: center; vertical-align: middle; }
+    .checkbox-group { margin-top: 0.5rem; max-height: 120px; overflow-y: auto; border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 4px; background: var(--bg-secondary);}
+    .checkbox-group label { display: flex; align-items: center; margin-top: 0.2rem; margin-bottom: 0.2rem; color: var(--text-primary);}
     .checkbox-group input[type="checkbox"] { margin-right: 0.3rem; cursor: pointer;}
-    .select-all-btn { font-size: 0.8rem; padding: 0.3rem 0.6rem; margin: 0.2rem 0; background: #1976d2; color: #fff; border: none; border-radius: 3px; cursor: pointer;}
+    .select-all-btn { font-size: 0.8rem; padding: 0.3rem 0.6rem; margin: 0.2rem 0; background: var(--header-bg); color: #fff; border: none; border-radius: 3px; cursor: pointer;}
     .select-all-btn:hover { background: #1565c0;}
     .action-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;}
-    .action-buttons button { padding: 0.4rem 0.8rem; font-size: 0.85rem;}
+    .action-buttons button { padding: 0.4rem 0.8rem; font-size: 0.8rem;}
     .success-msg { color: #4caf50; font-weight: bold; margin: 0.5rem 0;}
     .error-msg { color: #f44336; font-weight: bold; margin: 0.5rem 0;}
-    .referee-lights { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; margin: 2rem 0; }
-    .ref-box { width: 60px; height: 120px; border-radius: 8px; background: #e3e3e3; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 2.5rem; color: #444; border: 3px solid #ccc; }
-    .ref-box.white { background: #fff; color: #222; border: 3px solid #1976d2;}
-    .ref-box.red { background: #d32f2f; color: #fff; border: 3px solid #d32f2f;}
-    .audience-content { text-align: center; }
-    .audience-timer-section { display: block; margin: 2rem 0; }
-    .audience-timer-section.hidden { display: none; }
-    .audience-lights-section { display: none; margin: 2rem 0; }
-    .audience-lights-section.active { display: block; }
-    .lifter-info { margin: 1.5rem 0; font-size: 1.3rem; }
-    .lifter-lastname { font-size: 2.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
-    .lifter-firstname { font-size: 1.5rem; margin-top: 0.3rem; }
-    .lifter-team { font-size: 1rem; color: #666; margin-top: 0.5rem; font-style: italic; }
-    .attempt-weight { font-size: 2rem; font-weight: bold; margin: 1rem 0; color: #1976d2; }
+    .warning-msg { color: #ff9800; font-weight: bold; margin: 0.5rem 0;}
+    .next-attempt-panel { 
+      border: 2px solid #ff9800; 
+      border-radius: 8px; 
+      padding: 1rem; 
+      background: var(--bg-secondary); 
+      margin-top: 1rem;
+      min-height: 280px;
+    }
+    .next-attempt-panel h4 { margin-top: 0; color: #ff6f00;}
+    body.dark-mode .next-attempt-panel { background: var(--bg-secondary); }
+    .next-attempt-panel input:disabled,
+    .next-attempt-panel button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .import-export-section { margin-top: 1.5rem; padding: 1rem; background: var(--filter-bg); border-radius: 4px; }
+    .import-export-section h4 { margin-top: 0; color: var(--text-primary); }
+    .comp-select-section { margin-bottom: 1.5rem; padding: 1rem; background: var(--filter-bg); border-radius: 4px; }
+    .comp-select-section h3 { margin-top: 0; color: var(--text-primary); }
+    .decision-display {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      width: 100%;
+      height: calc(100vh - 60px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8rem;
+      font-weight: bold;
+      z-index: 999;
+      opacity: 1;
+      transition: opacity 0.3s;
+    }
+    .decision-display.good-lift {
+      background: rgba(76, 175, 80, 0.95);
+      color: #fff;
+    }
+    .decision-display.no-lift {
+      background: rgba(244, 67, 54, 0.95);
+      color: #fff;
+    }
+    .decision-display.review-lift {
+      background: rgba(255, 193, 7, 0.95);
+      color: #000;
+    }
+    .decision-display.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .timer-ref-display { 
+      font-size: 2rem; 
+      text-align: center; 
+      font-weight: bold; 
+      margin: 1rem 0; 
+      font-family: 'Courier New', monospace;
+      color: var(--text-primary);
+      background: var(--filter-bg);
+      padding: 1rem;
+      border-radius: 4px;
+    }
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4);}
+    .modal.active { display: block; }
+    .modal-content { background-color: var(--bg-secondary); margin: 10% auto; padding: 20px; border: 1px solid var(--border-color); border-radius: 8px; width: 90%; max-width: 500px;}
+    .modal-close { color: var(--text-secondary); float: right; font-size: 28px; font-weight: bold; cursor: pointer;}
+    .modal-close:hover { color: var(--text-primary); }
+    .left-panel { flex: 0 0 320px; }
+    .right-panel { flex: 1 1 550px; min-width: 320px; }
+    .ref-vote-controls {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      justify-content: center;
+    }
+    .ref-vote-btn {
+      flex: 1;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+      border: 2px solid;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.3s;
+    }
+    .ref-vote-btn.white-btn {
+      background: #ffffff;
+      color: #000;
+      border-color: #ffffff;
+    }
+    .ref-vote-btn.white-btn:hover {
+      background: #f0f0f0;
+    }
+    .ref-vote-btn.red-btn {
+      background: #d32f2f;
+      color: #fff;
+      border-color: #d32f2f;
+    }
+    .ref-vote-btn.red-btn:hover {
+      background: #b71c1c;
+    }
+    .ref-vote-btn.yellow-btn {
+      background: #ffc107;
+      color: #000;
+      border-color: #ffc107;
+    }
+    .ref-vote-btn.yellow-btn:hover {
+      background: #ffb300;
+    }
+    .confirm-votes-btn {
+      width: 100%;
+      margin-top: 1rem;
+      background: #4caf50;
+      color: white;
+      padding: 0.6rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .confirm-votes-btn:hover {
+      background: #45a049;
+    }
+    .confirm-votes-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .decision-choice-panel {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--bg-secondary);
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+      z-index: 1001;
+      border: 2px solid var(--header-bg);
+      text-align: center;
+      min-width: 400px;
+    }
+    .decision-choice-panel.active {
+      display: block;
+    }
+    .decision-choice-panel h3 {
+      margin-top: 0;
+      color: var(--text-primary);
+    }
+    .decision-choice-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      justify-content: center;
+    }
+    .decision-choice-buttons button {
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      flex: 1;
+    }
+    .decision-choice-buttons .good-btn {
+      background: #4caf50;
+    }
+    .decision-choice-buttons .good-btn:hover {
+      background: #45a049;
+    }
+    .decision-choice-buttons .no-btn {
+      background: #f44336;
+    }
+    .decision-choice-buttons .no-btn:hover {
+      background: #da190b;
+    }
+    .decision-choice-buttons .review-btn {
+      background: #ffc107;
+      color: #000;
+    }
+    .decision-choice-buttons .review-btn:hover {
+      background: #ffb300;
+    }
+    .last-attempt-display {
+      background: var(--filter-bg);
+      padding: 0.75rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      min-height: 70px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .weight-validation-msg {
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      border-radius: 3px;
+      display: none;
+    }
     @media(max-width:900px){
       .flex{ flex-direction: column;}
-      .half{ max-width: 100%; }
+      .left-panel, .right-panel { flex: 1 1 100%; }
+      .referee-lights { flex-direction: column; gap: 1rem; }
+      .barbell-container { position: static; transform: none; }
+      .decision-choice-panel {
+        min-width: 90%;
+      }
     }
   </style>
 </head>
 <body>
-<h1>DualLift Competition Dashboard</h1>
+<h1>
+  <span>DualLift Competition Dashboard</span>
+  <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+</h1>
 <nav>
   <a onclick="switchSection('main-menu')" id="nav-main" class="active">Main Menu</a>
   <a onclick="switchSection('audience-display')" id="nav-audience">Audience Display</a>
@@ -85,14 +561,28 @@
 <!-- MAIN MENU -->
 <section id="main-menu" class="active">
   <h2>Welcome to DualLift!</h2>
-  <p>This dashboard helps you run Powerlifting and Olympic Weightlifting events with separate scoreboards, filtering by category/division, live barbell visuals, and more.</p>
+  <p>Professional competition management for Powerlifting and Olympic Weightlifting events.</p>
   <ul>
     <li>Organize lifters by category and division for either event type</li>
-    <li>Log attempts quickly with single-click referee decisions</li>
-    <li>Audience and judges see live visual displays of the barbell</li>
+    <li>Live barbell visualization with correct attempt ordering</li>
+    <li>Three-referee decision system with real-time feedback</li>
     <li>Automatic Sinclair & Wilks scoring</li>
-    <li>Flexible views for audience, operators, and management</li>
+    <li>Save and load multiple competitions</li>
+    <li>Import/export lifter data to Excel</li>
   </ul>
+
+  <div class="comp-select-section">
+    <h3>📂 Saved Competitions</h3>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+      <select id="saved-comp-select" style="flex: 1; min-width: 200px;">
+        <option value="">-- Create New Competition --</option>
+      </select>
+      <button type="button" id="btn-load-comp" style="background: #2196f3;">Load</button>
+      <button type="button" id="btn-delete-comp" style="background: #f44336;">Delete</button>
+    </div>
+    <div id="comp-select-msg"></div>
+  </div>
+
   <fieldset>
     <legend>Choose Event Type</legend>
     <label>
@@ -105,7 +595,7 @@
     </label>
     <label>
       Divisions (comma separated, e.g. A,B,C):
-      <input type="text" id="division-list" placeholder="e.g. A,B,C" value="A,B">
+      <input type="text" id="division-list" placeholder="e.g. A,B" value="A,B">
     </label>
     <div id="event-setup-area" style="margin-top:1rem; display:none;">
       <label>
@@ -124,35 +614,47 @@
 
 <!-- AUDIENCE DISPLAY -->
 <section id="audience-display">
-  <h2>Audience Display</h2>
   <div class="audience-content">
-    <!-- Timer Section -->
-    <div class="audience-timer-section" id="aud-timer-section">
-      <div class="timer-display" id="aud-timer">00:60</div>
+    <div id="warmup-section" style="display: none; text-align: center;">
+      <h3 style="color: #ff9800; margin-bottom: 2rem;">WARM UP PERIOD</h3>
+      <div class="warmup-display" id="warmup-timer">05:00</div>
     </div>
-    <!-- Referee Lights Section -->
-    <div class="audience-lights-section" id="aud-lights-section">
-      <div class="referee-lights" id="aud-ref-lights">
-        <div class="ref-box" id="aud-ref-box-1"></div>
-        <div class="ref-box" id="aud-ref-box-2"></div>
-        <div class="ref-box" id="aud-ref-box-3"></div>
+
+    <div id="competition-section" class="audience-layout">
+      <div class="barbell-container">
+        <div class="barbell-visual" id="aud-barbell">
+          <div class="plates-container" id="plates-left"></div>
+          <div class="collar">collar</div>
+          <div class="barbell-bar"></div>
+          <div class="collar">collar</div>
+          <div class="plates-container" id="plates-right"></div>
+        </div>
+      </div>
+
+      <div class="center-content">
+        <div class="audience-timer-section" id="aud-timer-section">
+          <div class="timer-display" id="aud-timer">01:00</div>
+        </div>
+        
+        <div class="attempt-weight" id="aud-attempt-weight">---</div>
+        
+        <div class="lifter-info">
+          <div class="lifter-lastname" id="aud-lifter-lastname">---</div>
+          <div class="lifter-firstname" id="aud-lifter-firstname">---</div>
+          <div class="lifter-team" id="aud-lifter-team">---</div>
+        </div>
+        
+        <div class="audience-lights-section" id="aud-lights-section">
+          <div class="referee-lights" id="aud-ref-lights">
+            <div class="ref-box neutral" id="aud-ref-box-1"></div>
+            <div class="ref-box neutral" id="aud-ref-box-2"></div>
+            <div class="ref-box neutral" id="aud-ref-box-3"></div>
+          </div>
+        </div>
       </div>
     </div>
-    <!-- Attempt & Weight -->
-    <div class="attempt-weight" id="aud-attempt-weight">---</div>
-    <!-- Lifter Info -->
-    <div class="lifter-info">
-      <div class="lifter-lastname" id="aud-lifter-lastname">---</div>
-      <div class="lifter-firstname" id="aud-lifter-firstname">---</div>
-      <div class="lifter-team" id="aud-lifter-team">---</div>
-    </div>
-    <!-- Barbell Display -->
-    <div id="aud-barbell" class="barbell"></div>
-    <!-- Decision Text -->
-    <div style="font-size: 1.5rem; font-weight: bold; margin-top: 2rem;">
-      <strong>Referee Decision:</strong> <span id="aud-decision" style="color: #ff9800;">Waiting</span>
-    </div>
   </div>
+  <div class="decision-display hidden" id="decision-overlay"></div>
 </section>
 
 <!-- SCOREBOARD -->
@@ -172,86 +674,121 @@
       <div id="score-div-checkboxes" class="checkbox-group"></div>
     </fieldset>
   </div>
+  
+  <div class="import-export-section">
+    <h4>📊 Export Scoreboard</h4>
+    <button type="button" id="btn-export-scoreboard" style="background: #4caf50;">⬇ Export to Excel</button>
+    <div id="export-score-msg"></div>
+  </div>
+
   <div id="scoreboard-table-area"></div>
 </section>
 
 <!-- LIFTER MANAGEMENT -->
 <section id="lifter-management">
   <h2>Lifter Management</h2>
-  <div style="margin-bottom:1rem;color:#1976d2; font-size:0.95rem;" id="ctl-event-desc"></div>
+  <div style="margin-bottom:1rem;color:var(--header-bg); font-size:0.95rem;" id="ctl-event-desc"></div>
   <div class="flex" style="gap: 2rem; flex-wrap: wrap;">
-    <!-- Session Control -->
-    <div id="session-control-panel" style="flex: 1 1 320px; min-width: 320px; border: 2px solid #1976d2; border-radius: 8px; padding: 1rem; background: #f9f9f9;">
-      <fieldset>
-        <legend>Session Control</legend>
-        <div class="filters" style="gap: 0.5rem; flex-direction: column;">
-          <fieldset style="margin: 0;">
-            <legend style="font-size: 0.9rem;">Select Category & Division</legend>
-            <label>Category:
-              <select id="session-category" style="width: 100%;"></select>
-            </label>
-            <label>Division:
-              <select id="session-division"></select>
-            </label>
-          </fieldset>
-          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            <button type="button" id="btn-start-session" style="background: #4caf50;">▶ Start Session</button>
-            <button type="button" id="btn-reset-session" style="background: #ff9800;">↻ Reset Session</button>
+    <div class="left-panel">
+      <div id="session-control-panel" style="border: 2px solid var(--header-bg); border-radius: 8px; padding: 1rem; background: var(--bg-secondary);">
+        <fieldset>
+          <legend>Session Control</legend>
+          <div class="filters" style="gap: 0.5rem; flex-direction: column;">
+            <fieldset style="margin: 0;">
+              <legend style="font-size: 0.9rem;">Select Category & Division</legend>
+              <label>Category:
+                <select id="session-category" style="width: 100%;"></select>
+              </label>
+              <label>Division:
+                <select id="session-division"></select>
+              </label>
+            </fieldset>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <button type="button" id="btn-start-session" style="background: #4caf50;">▶ Start Session</button>
+              <button type="button" id="btn-reset-session" style="background: #ff9800;">↻ Reset Session</button>
+            </div>
           </div>
-        </div>
-        <div id="active-session-info" style="margin-top: 1rem; padding: 0.5rem; background: #e8f5e9; border-radius: 4px; display: none;">
-          <strong style="color: #2e7d32;">Session Active:</strong>
-          <div id="session-details" style="font-size: 0.9rem; margin-top: 0.3rem;"></div>
-        </div>
-      </fieldset>
+          <div id="active-session-info" style="margin-top: 1rem; padding: 0.5rem; background: var(--filter-bg); border-radius: 4px; display: none;">
+            <strong style="color: #2e7d32;">Session Active:</strong>
+            <div id="session-details" style="font-size: 0.9rem; margin-top: 0.3rem;"></div>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="next-attempt-panel" id="next-attempt-panel">
+        <h4>📝 Next Attempt Input</h4>
+        <div class="last-attempt-display" id="last-attempt-info">Ready when session starts...</div>
+        <form id="next-attempt-form" style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <label style="margin-top: 0;">
+            Next Lift Weight (kg):
+            <input type="number" id="next-lift-weight" step="0.5" min="0" disabled>
+          </label>
+          <div id="review-warning" style="display: none; color: #f44336; font-weight: bold; padding: 0.5rem; background: #ffebee; border-radius: 4px;">
+            ⚠ Cannot proceed - Previous attempt is under review!
+          </div>
+          <div id="weight-validation" class="weight-validation-msg"></div>
+          <button type="button" id="btn-submit-next-attempt" style="margin-top: 0.5rem; background: #4caf50; width: 100%;" disabled>✓ Add Attempt</button>
+        </form>
+      </div>
     </div>
 
-    <!-- Lifter Registration & Management Panel -->
-    <div id="registration-panel" style="flex: 1 1 550px; min-width: 320px; border: 2px solid #1976d2; border-radius: 8px; padding: 1rem; background: #f9f9f9;">
-      <fieldset>
-        <legend>Lifter Registration & Management</legend>
-        <!-- Filters -->
-        <div class="filters" style="margin-bottom: 1rem; gap: 1rem;">
-          <fieldset style="flex: 1 1 180px;">
-            <legend>Show Category</legend>
-            <button type="button" class="select-all-btn" onclick="toggleAllCheckboxes('reg-cat-checkboxes', true)">Select All</button>
-            <button type="button" class="select-all-btn" onclick="toggleAllCheckboxes('reg-cat-checkboxes', false)">Clear All</button>
-            <div id="reg-cat-checkboxes" class="checkbox-group"></div>
-          </fieldset>
-          <fieldset style="flex: 1 1 150px;">
-            <legend>Show Division</legend>
-            <button type="button" class="select-all-btn" onclick="toggleAllCheckboxes('reg-div-checkboxes', true)">Select All</button>
-            <button type="button" class="select-all-btn" onclick="toggleAllCheckboxes('reg-div-checkboxes', false)">Clear All</button>
-            <div id="reg-div-checkboxes" class="checkbox-group"></div>
-          </fieldset>
-        </div>
-        <!-- Registration Form -->
-        <form id="reg-form">
-          <fieldset>
-            <legend>Add / Update Lifter</legend>
-            <label>First Name: <input required id="reg-firstname"></label>
-            <label>Last Name: <input required id="reg-lastname"></label>
-            <label>Team/College: <input id="reg-team"></label>
-            <label>Bodyweight (kg): <input required type="number" step="0.1" min="1" id="reg-bw"></label>
-            <label>Date of Birth: <input required type="date" id="reg-dob"></label>
-            <label>Category: <select id="reg-category"></select></label>
-            <label>Division: <select id="reg-division"></select></label>
-            <div id="olympic-inputs" style="display:none; margin-top: 0.5rem; padding: 0.5rem; background: #e3f2fd; border-radius: 4px;">
-              <label>1st Snatch (kg): <input type="number" min="0" step="0.5" id="reg-snatch"></label>
-              <label>1st Clean & Jerk (kg): <input type="number" min="0" step="0.5" id="reg-cj"></label>
+    <div class="right-panel">
+      <div id="registration-panel" style="border: 2px solid var(--header-bg); border-radius: 8px; padding: 1rem; background: var(--bg-secondary);">
+        <fieldset>
+          <legend>Lifter Registration & Management</legend>
+          <div class="filters" style="margin-bottom: 1rem; gap: 1rem;">
+            <fieldset style="flex: 1 1 180px;">
+              <legend>Show Category</legend>
+              <button type="button" class="select-all-btn" onclick="toggleAllCheckboxes('reg-cat-checkboxes', true)">Select All</button>
+              <button type="button" class="select-all-btn" onclick="toggleAllCheckboxes('reg-cat-checkboxes', false)">Clear All</button>
+              <div id="reg-cat-checkboxes" class="checkbox-group"></div>
+            </fieldset>
+            <fieldset style="flex: 1 1 150px;">
+              <legend>Show Division</legend>
+              <button type="button" class="select-all-btn" onclick="toggleAllCheckboxes('reg-div-checkboxes', true)">Select All</button>
+              <button type="button" class="select-all-btn" onclick="toggleAllCheckboxes('reg-div-checkboxes', false)">Clear All</button>
+              <div id="reg-div-checkboxes" class="checkbox-group"></div>
+            </fieldset>
+          </div>
+          
+          <div class="import-export-section" style="margin-bottom: 1rem;">
+            <h4>📥📤 Import / Export Lifters</h4>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+              <button type="button" id="btn-export-lifters" style="background: #4caf50; flex: 1; min-width: 150px;">⬇ Export to Excel</button>
+              <label style="display: flex; align-items: center; gap: 0.5rem; margin: 0; background: #2196f3; color: #fff; padding: 0.45rem 1rem; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                📤 Import Excel
+                <input type="file" id="import-lifters-file" accept=".xlsx,.xls,.csv" style="display: none;">
+              </label>
             </div>
-            <div id="powerlifting-inputs" style="display:none; margin-top: 0.5rem; padding: 0.5rem; background: #e3f2fd; border-radius: 4px;">
-              <label>1st Squat (kg): <input type="number" min="0" step="0.5" id="reg-squat"></label>
-              <label>1st Bench Press (kg): <input type="number" min="0" step="0.5" id="reg-bench"></label>
-              <label>1st Deadlift (kg): <input type="number" min="0" step="0.5" id="reg-deadlift"></label>
-            </div>
-            <button type="submit" style="margin-top: 1rem; background: #1976d2; width: 100%;">Add / Update Lifter</button>
-          </fieldset>
-        </form>
-        <div id="reg-msg"></div>
-        <!-- Registered Lifters List -->
-        <div id="registered-lifters" style="margin-top: 1rem; max-height: 350px; overflow-y: auto;"></div>
-      </fieldset>
+            <div id="import-export-msg"></div>
+          </div>
+
+          <form id="reg-form">
+            <fieldset>
+              <legend>Add / Update Lifter</legend>
+              <label>First Name: <input required id="reg-firstname"></label>
+              <label>Last Name: <input required id="reg-lastname"></label>
+              <label>Team/College: <input id="reg-team"></label>
+              <label>Bodyweight (kg): <input required type="number" step="0.1" min="1" id="reg-bw"></label>
+              <label>Date of Birth: <input required type="date" id="reg-dob"></label>
+              <label>Category: <select id="reg-category"></select></label>
+              <label>Division: <select id="reg-division"></select></label>
+              <div id="olympic-inputs" style="display:none; margin-top: 0.5rem; padding: 0.5rem; background: var(--filter-bg); border-radius: 4px;">
+                <label>1st Snatch (kg): <input type="number" min="0" step="0.5" id="reg-snatch"></label>
+                <label>1st Clean & Jerk (kg): <input type="number" min="0" step="0.5" id="reg-cj"></label>
+              </div>
+              <div id="powerlifting-inputs" style="display:none; margin-top: 0.5rem; padding: 0.5rem; background: var(--filter-bg); border-radius: 4px;">
+                <label>1st Squat (kg): <input type="number" min="0" step="0.5" id="reg-squat"></label>
+                <label>1st Bench Press (kg): <input type="number" min="0" step="0.5" id="reg-bench"></label>
+                <label>1st Deadlift (kg): <input type="number" min="0" step="0.5" id="reg-deadlift"></label>
+              </div>
+              <button type="submit" style="margin-top: 1rem; background: var(--header-bg); width: 100%;">Add / Update Lifter</button>
+            </fieldset>
+          </form>
+          <div id="reg-msg"></div>
+          <div id="registered-lifters" style="margin-top: 1rem; max-height: 350px; overflow-y: auto;"></div>
+        </fieldset>
+      </div>
     </div>
   </div>
 </section>
@@ -259,36 +796,74 @@
 <!-- REFEREE CONTROL -->
 <section id="referee-control">
   <h2>Referee Control</h2>
-  <div style="margin-bottom:1rem;color:#1976d2; font-size:0.95rem;" id="ref-event-desc"></div>
+  <div style="margin-bottom:1rem;color:var(--header-bg); font-size:0.95rem;" id="ref-event-desc"></div>
   
   <div class="flex" style="gap: 2rem; flex-wrap: wrap;">
-    <!-- Timer & Referee Decision Panel -->
-    <div id="timer-referee-panel" style="flex: 1 1 320px; min-width: 320px; border: 2px solid #1976d2; border-radius: 8px; padding: 1rem; background: #f9f9f9;">
+    <div id="timer-referee-panel" style="flex: 1 1 320px; min-width: 320px; border: 2px solid var(--header-bg); border-radius: 8px; padding: 1rem; background: var(--bg-secondary);">
       <fieldset>
         <legend>Timer & Referee Decisions</legend>
+        
+        <div class="timer-ref-display" id="ref-timer-display">01:00</div>
+        
         <div style="margin-bottom:1rem;">
           <label style="display: flex; gap: 0.5rem; align-items: center;">
             <input type="number" id="ctl-timer-len" value="60" min="10" max="180" style="width: 5rem;">
             <span>seconds</span>
           </label>
-          <button type="button" id="ctl-timer-start" style="margin-top: 0.5rem;">▶ Start Timer</button>
+          <button type="button" id="ctl-timer-start" style="margin-top: 0.5rem;">▶ Start</button>
           <button type="button" id="ctl-timer-pause" style="margin-top: 0.5rem;">⏸ Pause</button>
-          <button type="button" id="ctl-timer-reset" style="margin-top: 0.5rem;">↻ Reset</button>
+          <button type="button" id="ctl-timer-stop" style="margin-top: 0.5rem;">⏹ Stop</button>
         </div>
-        <div style="margin-top:1.5rem;">
-          <p style="margin: 0 0 0.5rem 0; font-weight: bold;">Referee Decisions:</p>
-          <button type="button" class="decision-good" id="btn-good-lift" disabled>✓ Good Lift</button>
-          <button type="button" class="decision-no" id="btn-no-lift" disabled>✗ No Lift</button>
-          <button type="button" class="decision-review" id="btn-under-review" disabled>? Under Review</button>
+
+        <div style="margin-top: 1.5rem; padding: 0.5rem; background: var(--filter-bg); border-radius: 4px; border-left: 4px solid #ff9800;">
+          <p style="margin: 0 0 0.5rem 0; font-weight: bold; color: var(--text-primary);">Warmup Configuration</p>
+          <label style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0; color: var(--text-primary);">
+            <input type="number" id="warmup-duration" value="5" min="1" max="30" style="width: 4rem;">
+            <span>minutes</span>
+          </label>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <button type="button" id="btn-start-warmup" style="background: #ff9800; flex: 1;">Start Warmup</button>
+            <button type="button" id="btn-stop-warmup" style="background: #d32f2f; flex: 1;">Stop Warmup</button>
+          </div>
         </div>
+      </fieldset>
+
+      <fieldset style="margin-top: 1rem;">
+        <legend>Live Referee Votes (Click to vote)</legend>
+        <div class="referee-lights" id="ref-control-lights">
+          <div style="text-align: center;">
+            <div class="ref-box neutral" id="ref-control-box-1"></div>
+            <div class="ref-vote-controls">
+              <button class="ref-vote-btn white-btn" onclick="setRefVote(0, 'good')">⬜</button>
+              <button class="ref-vote-btn red-btn" onclick="setRefVote(0, 'no')">🔴</button>
+              <button class="ref-vote-btn yellow-btn" onclick="setRefVote(0, 'review')">🟡</button>
+            </div>
+          </div>
+          <div style="text-align: center;">
+            <div class="ref-box neutral" id="ref-control-box-2"></div>
+            <div class="ref-vote-controls">
+              <button class="ref-vote-btn white-btn" onclick="setRefVote(1, 'good')">⬜</button>
+              <button class="ref-vote-btn red-btn" onclick="setRefVote(1, 'no')">🔴</button>
+              <button class="ref-vote-btn yellow-btn" onclick="setRefVote(1, 'review')">🟡</button>
+            </div>
+          </div>
+          <div style="text-align: center;">
+            <div class="ref-box neutral" id="ref-control-box-3"></div>
+            <div class="ref-vote-controls">
+              <button class="ref-vote-btn white-btn" onclick="setRefVote(2, 'good')">⬜</button>
+              <button class="ref-vote-btn red-btn" onclick="setRefVote(2, 'no')">🔴</button>
+              <button class="ref-vote-btn yellow-btn" onclick="setRefVote(2, 'review')">🟡</button>
+            </div>
+          </div>
+        </div>
+        <button class="confirm-votes-btn" id="btn-confirm-votes" disabled>✓ Confirm Votes</button>
       </fieldset>
     </div>
 
-    <!-- Referee Key Configuration Panel -->
-    <div id="referee-config-panel" style="flex: 1 1 320px; min-width: 320px; border: 2px solid #1976d2; border-radius: 8px; padding: 1rem; background: #f9f9f9;">
+    <div id="referee-config-panel" style="flex: 1 1 320px; min-width: 320px; border: 2px solid var(--header-bg); border-radius: 8px; padding: 1rem; background: var(--bg-secondary);">
       <fieldset>
         <legend>Referee Key Configuration</legend>
-        <p style="font-size: 0.9rem; margin-bottom: 1rem;">Configure keys for referee decisions</p>
+        <p style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--text-primary);">Configure keys for referee decisions</p>
         <label>
           Referee 1 Key:
           <input type="text" id="ref-key-1" value="1" maxlength="1" placeholder="1">
@@ -309,33 +884,93 @@
           No Lift Key:
           <input type="text" id="ref-key-no" value="n" maxlength="1" placeholder="n">
         </label>
-        <button type="button" id="btn-save-ref-keys" style="margin-top: 1rem; width: 100%;">Save Key Config</button>
+        <label>
+          Under Review Key:
+          <input type="text" id="ref-key-review" value="r" maxlength="1" placeholder="r">
+        </label>
+        <button type="button" id="btn-save-ref-keys" style="margin-top: 1rem; width: 100%; background: var(--header-bg);">Save Key Config</button>
         <div id="ref-config-msg"></div>
-        <div id="referee-assign-info" style="margin-top: 1rem; padding: 0.5rem; background: #e3f2fd; border-radius: 4px; font-size: 0.9rem;"></div>
+        <div id="referee-assign-info" style="margin-top: 1rem; padding: 0.5rem; background: var(--filter-bg); border-radius: 4px; font-size: 0.9rem; color: var(--text-primary);"></div>
       </fieldset>
     </div>
   </div>
 </section>
 
+<!-- Edit Lift Modal -->
+<div id="edit-lift-modal" class="modal">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closeEditLiftModal()">&times;</span>
+    <h3>Edit Lift</h3>
+    <form id="edit-lift-form">
+      <label>
+        Lifter:
+        <input type="text" id="edit-lift-lifter" readonly style="background: var(--filter-bg);">
+      </label>
+      <label>
+        Lift Weight (kg):
+        <input type="text" id="edit-lift-weight" placeholder="or - for no attempt" required>
+      </label>
+      <label>
+        Decision:
+        <select id="edit-lift-decision" required>
+          <option value="">-- Choose --</option>
+          <option value="good">Good Lift</option>
+          <option value="no">No Lift</option>
+          <option value="review">Under Review</option>
+          <option value="empty">Not Attempted</option>
+        </select>
+      </label>
+      <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+        <button type="submit" style="flex: 1; background: var(--header-bg);">Save</button>
+        <button type="button" onclick="closeEditLiftModal()" style="flex: 1; background: #999;">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Decision Choice Modal -->
+<div class="decision-choice-panel" id="decision-choice-panel">
+  <h3>Select Referee Decision</h3>
+  <p style="color: var(--text-secondary);">What is the referee decision for this lift?</p>
+  <div class="decision-choice-buttons">
+    <button class="good-btn" onclick="showDecisionOverlay('good')">✓ GOOD LIFT</button>
+    <button class="no-btn" onclick="showDecisionOverlay('no')">✗ NO LIFT</button>
+    <button class="review-btn" onclick="showDecisionOverlay('review')">⏳ UNDER REVIEW</button>
+  </div>
+</div>
+
 <script>
-// Persistent state
+// Persistent state with proper attempt management
 let state = {
   olympic: { categories: [], lifters: [], attempts: [] },
   powerlifting: { categories: [], lifters: [], attempts: [] },
   divisions: ["A", "B"],
   currentType: null,
   competitionName: '',
-  logging: { currentLifter: 0, attemptNumber: 1 },
+  logging: { currentLifter: 0, attemptIndex: 0 },
   timer: { val: 60, running: false, interval: null },
+  warmupTimer: { val: 0, running: false, interval: null, isActive: false },
   activeSession: { category: null, division: null, isRunning: false },
   refereeDecisions: [null, null, null],
   editingIndex: null,
-  refKeys: { ref1: '1', ref2: '2', ref3: '3', good: 'g', no: 'n' }
+  refKeys: { ref1: '1', ref2: '2', ref3: '3', good: 'g', no: 'n', review: 'r' },
+  editingLiftData: null,
+  decisionOverlayActive: false,
+  nextAttemptWaiting: false
 };
 
 let selectedReferee = null;
 
-// Helper: Sinclair Score
+function toggleDarkMode() {
+  document.body.classList.toggle('dark-mode');
+  localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+}
+
+if (localStorage.getItem('darkMode') === 'true') {
+  document.body.classList.add('dark-mode');
+}
+
+// Scoring functions
 function sinclairScore(total, bw, gender = 'M') {
   let a = 0.75194503, b = 175.508;
   if (gender == 'F') { a = 0.783497476; b = 153.655; }
@@ -345,7 +980,6 @@ function sinclairScore(total, bw, gender = 'M') {
   return total * coeff;
 }
 
-// Helper: Wilks Score
 function wilksScore(total, bw, gender = 'M') {
   let c = gender === "M"
     ? [-216.0475144, 16.2606339, -0.002388645, -0.00113732, 7.01863e-06, -1.291e-08]
@@ -355,14 +989,28 @@ function wilksScore(total, bw, gender = 'M') {
   return d === 0 ? 0 : total * 500 / d;
 }
 
-// Format time as MM:SS
 function formatTime(seconds) {
   let mins = Math.floor(seconds / 60);
   let secs = seconds % 60;
   return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
 }
 
-// UI: Switch Section
+function getOrdinal(n) { 
+  return n===1?'st':(n===2?'nd':(n===3?'rd':'th')); 
+}
+
+// Get lift name (Snatch, CJ, Squat, etc)
+function getLiftName(attemptIndex, eventType) {
+  if (eventType === "olympic") {
+    if (attemptIndex < 3) return `Snatch ${attemptIndex + 1}`;
+    else return `Clean & Jerk ${attemptIndex - 2}`;
+  } else {
+    if (attemptIndex < 3) return `Squat ${attemptIndex + 1}`;
+    else if (attemptIndex < 6) return `Bench ${attemptIndex - 2}`;
+    else return `Deadlift ${attemptIndex - 5}`;
+  }
+}
+
 function switchSection(id) {
   document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
   const section = document.getElementById(id);
@@ -383,10 +1031,77 @@ function switchSection(id) {
   if (id === "audience-display") updateAudienceDisplay();
   else if (id === "scoreboard-display") updateScoreboard();
   else if (id === "lifter-management") updateRegisteredLifters();
-  else if (id === "referee-control") updateRefereeControl();
+  else if (id === "referee-control") { updateRefereeControl(); updateRefTimerDisplay(); }
 }
 
-// Event setup
+function loadSavedComps() {
+  let saved = JSON.parse(localStorage.getItem('dualLiftComps') || '{}');
+  let select = document.getElementById('saved-comp-select');
+  select.innerHTML = '<option value="">-- Create New Competition --</option>';
+  Object.keys(saved).forEach(name => {
+    let opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt);
+  });
+}
+
+function saveCompetition() {
+  if (!state.competitionName) {
+    document.getElementById('setup-msg').textContent = "❌ Please enter a competition name!";
+    return;
+  }
+  let saved = JSON.parse(localStorage.getItem('dualLiftComps') || '{}');
+  saved[state.competitionName] = {
+    eventType: state.currentType,
+    divisions: state.divisions,
+    categories: state[state.currentType].categories,
+    lifters: state[state.currentType].lifters,
+    attempts: state[state.currentType].attempts
+  };
+  localStorage.setItem('dualLiftComps', JSON.stringify(saved));
+  loadSavedComps();
+}
+
+document.getElementById('btn-load-comp').addEventListener('click', function() {
+  let compName = document.getElementById('saved-comp-select').value;
+  if (!compName) { alert("Select a competition first!"); return; }
+  let saved = JSON.parse(localStorage.getItem('dualLiftComps') || '{}');
+  if (!saved[compName]) { alert("Competition not found!"); return; }
+  let comp = saved[compName];
+  state.currentType = comp.eventType;
+  state.divisions = comp.divisions;
+  state.competitionName = compName;
+  state[comp.eventType].categories = comp.categories;
+  state[comp.eventType].lifters = comp.lifters;
+  state[comp.eventType].attempts = comp.attempts;
+  document.getElementById('event-type-select').value = comp.eventType;
+  document.getElementById('competition-name').value = compName;
+  document.getElementById('division-list').value = comp.divisions.join(',');
+  document.getElementById('category-list').value = comp.categories.join(',');
+  document.getElementById('olympic-inputs').style.display = comp.eventType === "olympic" ? "block" : "none";
+  document.getElementById('powerlifting-inputs').style.display = comp.eventType === "powerlifting" ? "block" : "none";
+  populateCatFilters();
+  populateRegCatOptions();
+  populateSessionCategory();
+  populateDivFilters();
+  populateSessionDivision();
+  populateRegDivOptions();
+  document.getElementById('comp-select-msg').innerHTML = `<div class='success-msg'>✓ Loaded: ${compName}</div>`;
+  setTimeout(() => document.getElementById('comp-select-msg').innerHTML = "", 3000);
+});
+
+document.getElementById('btn-delete-comp').addEventListener('click', function() {
+  let compName = document.getElementById('saved-comp-select').value;
+  if (!compName) { alert("Select a competition to delete!"); return; }
+  if (!confirm(`Delete "${compName}"?`)) return;
+  let saved = JSON.parse(localStorage.getItem('dualLiftComps') || '{}');
+  delete saved[compName];
+  localStorage.setItem('dualLiftComps', JSON.stringify(saved));
+  loadSavedComps();
+  alert("✓ Deleted!");
+});
+
 document.getElementById('event-type-select').onchange = function () {
   let v = this.value;
   state.currentType = v;
@@ -420,6 +1135,7 @@ document.getElementById('setup-confirm-btn').onclick = function () {
   document.getElementById('ctl-event-desc').textContent = `Current Event: ${state.competitionName || '[unnamed]'} (${state.currentType === "olympic" ? "Olympic Weightlifting" : "Powerlifting"})`;
   document.getElementById('ref-event-desc').textContent = `Current Event: ${state.competitionName || '[unnamed]'} (${state.currentType === "olympic" ? "Olympic Weightlifting" : "Powerlifting"})`;
   document.getElementById('setup-msg').innerHTML = "<div class='success-msg'>✓ Setup complete! Go to Lifter Management to add lifters.</div>";
+  saveCompetition();
 };
 
 function populateRegCatOptions() {
@@ -433,6 +1149,7 @@ function populateRegCatOptions() {
     sel.appendChild(o);
   });
 }
+
 function populateSessionCategory() {
   let sel = document.getElementById('session-category');
   sel.innerHTML = '';
@@ -444,6 +1161,7 @@ function populateSessionCategory() {
     sel.appendChild(o);
   });
 }
+
 function populateDivFilters() {
   ["score-div-checkboxes", "reg-div-checkboxes"].forEach(id => {
     let container = document.getElementById(id);
@@ -452,12 +1170,12 @@ function populateDivFilters() {
     divs.forEach(d => {
       let label = document.createElement('label');
       label.innerHTML = `<input type="checkbox" value="${d}" checked> ${d}`;
-      label.style.display = 'block';
       container.appendChild(label);
     });
     container.addEventListener('change', id.includes('score') ? updateScoreboard : updateRegisteredLifters);
   });
 }
+
 function populateSessionDivision() {
   let sel = document.getElementById('session-division');
   sel.innerHTML = '';
@@ -469,6 +1187,7 @@ function populateSessionDivision() {
     sel.appendChild(o);
   });
 }
+
 function populateRegDivOptions() {
   let sel = document.getElementById('reg-division');
   sel.innerHTML = '';
@@ -480,6 +1199,148 @@ function populateRegDivOptions() {
     sel.appendChild(o);
   });
 }
+
+// Export lifters
+document.getElementById('btn-export-lifters').addEventListener('click', function() {
+  let ty = state.currentType;
+  if (!ty) { alert("Setup competition first!"); return; }
+  let cats = getSelectedFilter('reg-cat-checkboxes');
+  let divs = getSelectedFilter('reg-div-checkboxes');
+  let lifters = state[ty].lifters.filter(l => cats.includes(l.category) && divs.includes(l.division));
+  if (!lifters.length) { alert("No lifters to export!"); return; }
+  
+  let data = lifters.map(l => {
+    let row = {
+      'First Name': l.firstname,
+      'Last Name': l.lastname,
+      'Team': l.team,
+      'Bodyweight': l.bodyweight,
+      'DOB': l.dob,
+      'Category': l.category,
+      'Division': l.division
+    };
+    if (ty === "olympic") {
+      row['Snatch'] = l.firstLifts[0];
+      row['C&J'] = l.firstLifts[1];
+    } else {
+      row['Squat'] = l.firstLifts[0];
+      row['Bench'] = l.firstLifts[1];
+      row['Deadlift'] = l.firstLifts[2];
+    }
+    return row;
+  });
+  
+  let ws = XLSX.utils.json_to_sheet(data);
+  let wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Lifters");
+  XLSX.writeFile(wb, `${state.competitionName || 'lifters'}_${state.currentType}.xlsx`);
+  document.getElementById('import-export-msg').innerHTML = "<div class='success-msg'>✓ Lifters exported!</div>";
+  setTimeout(() => document.getElementById('import-export-msg').innerHTML = "", 2000);
+});
+
+// Import lifters
+document.getElementById('import-lifters-file').addEventListener('change', function(e) {
+  let file = e.target.files[0];
+  if (!file) return;
+  let reader = new FileReader();
+  reader.onload = function(event) {
+    try {
+      let data = new Uint8Array(event.target.result);
+      let workbook = XLSX.read(data, { type: 'array' });
+      let sheet = workbook.Sheets[workbook.SheetNames[0]];
+      let rows = XLSX.utils.sheet_to_json(sheet);
+      
+      let ty = state.currentType;
+      if (!ty) { alert("Setup competition first!"); return; }
+      
+      rows.forEach(row => {
+        let lifter = {
+          firstname: row['First Name'] || '',
+          lastname: row['Last Name'] || '',
+          team: row['Team'] || '',
+          bodyweight: parseFloat(row['Bodyweight']) || 0,
+          dob: row['DOB'] || '',
+          category: row['Category'] || '',
+          division: row['Division'] || '',
+          gender: 'M',
+          attempts: [],
+          firstLifts: ty === "olympic"
+            ? [parseFloat(row['Snatch']) || 0, parseFloat(row['C&J']) || 0]
+            : [parseFloat(row['Squat']) || 0, parseFloat(row['Bench']) || 0, parseFloat(row['Deadlift']) || 0]
+        };
+        lifter.totalFirst = lifter.firstLifts.reduce((a, b) => a + b, 0);
+        // Initialize attempts with first lifts
+        if (ty === "olympic") {
+          lifter.attempts[0] = { weight: lifter.firstLifts[0], status: 'next' };
+          lifter.attempts[1] = { weight: lifter.firstLifts[1], status: 'next' };
+        } else {
+          lifter.attempts[0] = { weight: lifter.firstLifts[0], status: 'next' };
+          lifter.attempts[1] = { weight: lifter.firstLifts[1], status: 'next' };
+          lifter.attempts[2] = { weight: lifter.firstLifts[2], status: 'next' };
+        }
+        state[ty].lifters.push(lifter);
+      });
+      
+      assignStartingNumbers();
+      updateRegisteredLifters();
+      updateScoreboard();
+      document.getElementById('import-export-msg').innerHTML = `<div class='success-msg'>✓ Imported ${rows.length} lifters!</div>`;
+      setTimeout(() => document.getElementById('import-export-msg').innerHTML = "", 3000);
+    } catch (err) {
+      alert('Error importing file: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = '';
+});
+
+// Export scoreboard
+document.getElementById('btn-export-scoreboard').addEventListener('click', function() {
+  let ty = state.currentType;
+  if (!ty) { alert("Setup competition first!"); return; }
+  let cats = getSelectedFilter('score-cat-checkboxes');
+  let divs = getSelectedFilter('score-div-checkboxes');
+  let lifters = state[ty].lifters.filter(l => cats.includes(l.category) && divs.includes(l.division));
+  if (!lifters.length) { alert("No scoreboard data!"); return; }
+  
+  let data = lifters.sort((a, b) => (getLifterTotal(b) || 0) - (getLifterTotal(a) || 0)).map((l, idx) => {
+    let row = {
+      'Rank': idx + 1,
+      'Start #': l.startingNumber,
+      'Name': `${l.firstname} ${l.lastname}`,
+      'Team': l.team,
+      'Category': l.category,
+      'Division': l.division
+    };
+    if (ty === "olympic") {
+      row['S1'] = l.attempts[0]?.weight || '-';
+      row['S2'] = l.attempts[1]?.weight || '-';
+      row['S3'] = l.attempts[2]?.weight || '-';
+      row['CJ1'] = l.attempts[3]?.weight || '-';
+      row['CJ2'] = l.attempts[4]?.weight || '-';
+      row['CJ3'] = l.attempts[5]?.weight || '-';
+    } else {
+      row['Sq1'] = l.attempts[0]?.weight || '-';
+      row['Sq2'] = l.attempts[1]?.weight || '-';
+      row['Sq3'] = l.attempts[2]?.weight || '-';
+      row['B1'] = l.attempts[3]?.weight || '-';
+      row['B2'] = l.attempts[4]?.weight || '-';
+      row['B3'] = l.attempts[5]?.weight || '-';
+      row['DL1'] = l.attempts[6]?.weight || '-';
+      row['DL2'] = l.attempts[7]?.weight || '-';
+      row['DL3'] = l.attempts[8]?.weight || '-';
+    }
+    row['Total'] = getLifterTotal(l) || 0;
+    return row;
+  });
+  
+  let ws = XLSX.utils.json_to_sheet(data);
+  let wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Scoreboard");
+  XLSX.writeFile(wb, `${state.competitionName || 'scoreboard'}_results.xlsx`);
+  document.getElementById('export-score-msg').innerHTML = "<div class='success-msg'>✓ Scoreboard exported!</div>";
+  setTimeout(() => document.getElementById('export-score-msg').innerHTML = "", 2000);
+});
 
 // Registration form
 document.getElementById('reg-form').onsubmit = function (e) {
@@ -495,22 +1356,26 @@ document.getElementById('reg-form').onsubmit = function (e) {
     category: document.getElementById('reg-category').value,
     division: document.getElementById('reg-division').value,
     gender: 'M',
+    attempts: []
   };
   if (ty === "olympic") {
     out.firstLifts = [
       parseFloat(document.getElementById('reg-snatch').value) || 0,
       parseFloat(document.getElementById('reg-cj').value) || 0
     ];
+    out.attempts[0] = { weight: out.firstLifts[0], status: 'next' };
+    out.attempts[1] = { weight: out.firstLifts[1], status: 'next' };
   } else {
     out.firstLifts = [
       parseFloat(document.getElementById('reg-squat').value) || 0,
       parseFloat(document.getElementById('reg-bench').value) || 0,
       parseFloat(document.getElementById('reg-deadlift').value) || 0
     ];
+    out.attempts[0] = { weight: out.firstLifts[0], status: 'next' };
+    out.attempts[1] = { weight: out.firstLifts[1], status: 'next' };
+    out.attempts[2] = { weight: out.firstLifts[2], status: 'next' };
   }
-  out.attempts = [];
   out.totalFirst = out.firstLifts.reduce((a, b) => a + b, 0);
-  // Edit lifter logic
   if (state.editingIndex !== null && typeof state.editingIndex !== "undefined") {
     state[ty].lifters[state.editingIndex] = out;
     state.editingIndex = null;
@@ -520,9 +1385,12 @@ document.getElementById('reg-form').onsubmit = function (e) {
   }
   document.getElementById('reg-msg').innerHTML = "<div class='success-msg'>✓ Lifter added successfully!</div>";
   setTimeout(() => document.getElementById('reg-msg').innerHTML = "", 2000);
+  assignStartingNumbers();
   updateRegisteredLifters();
   updateScoreboard();
   updateAudienceDisplay();
+  updateNextAttemptPanel();
+  saveCompetition();
   this.reset();
 };
 
@@ -534,12 +1402,12 @@ function populateCatFilters() {
     cats.forEach(c => {
       let label = document.createElement('label');
       label.innerHTML = `<input type="checkbox" value="${c}" checked> ${c} kg`;
-      label.style.display = 'block';
       container.appendChild(label);
     });
     container.addEventListener('change', id.includes('score') ? updateScoreboard : updateRegisteredLifters);
   });
 }
+
 function toggleAllCheckboxes(containerId, checked) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -547,20 +1415,22 @@ function toggleAllCheckboxes(containerId, checked) {
   if (containerId.includes('score')) updateScoreboard();
   else updateRegisteredLifters();
 }
+
 function getSelectedFilter(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return [];
   return Array.from(container.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
 }
+
 function assignStartingNumbers() {
   if (!state.currentType) return;
   const lifters = state[state.currentType].lifters;
-  lifters.sort((a, b) => b.totalFirst - a.totalFirst);
+  lifters.sort((a, b) => a.totalFirst - b.totalFirst);
   lifters.forEach((l, i) => l.startingNumber = i + 1);
 }
-// Registered Lifters: grouped and filterable
+
+// Registered Lifters
 function updateRegisteredLifters() {
-  assignStartingNumbers();
   let ty = state.currentType;
   if (!ty) return;
   let disp = document.getElementById('registered-lifters');
@@ -585,22 +1455,36 @@ function updateRegisteredLifters() {
     html += `<tr class="cat-header"><td colspan="99">${cat} kg</td></tr>`;
     Object.keys(grouped[cat]).sort().forEach(div => {
       html += `<tr class="div-header"><td colspan="99">Division ${div}</td></tr>`;
-      html += `<tr><th>#</th><th>First Name</th><th>Last Name</th><th>Team</th><th>Wt</th><th>Total</th>`;
-      if (ty === "olympic") html += `<th>Snatch</th><th>C&J</th>`;
-      else html += `<th>Squat</th><th>Bench</th><th>DL</th>`;
-      html += `<th>Actions</th></tr>`;
+      html += `<tr><th>#</th><th>First Name</th><th>Last Name</th><th>Team</th>`;
+      if (ty === "olympic") {
+        html += `<th>S1</th><th>S2</th><th>S3</th><th>CJ1</th><th>CJ2</th><th>CJ3</th><th>Total</th>`;
+      } else {
+        html += `<th>Sq1</th><th>Sq2</th><th>Sq3</th><th>B1</th><th>B2</th><th>B3</th><th>DL1</th><th>DL2</th><th>DL3</th><th>Total</th>`;
+      }
+      html += `<th>Sinclair</th><th>Actions</th></tr>`;
       grouped[cat][div].forEach((l, idx) => {
+        let total = getLifterTotal(l);
+        let sinclair = sinclairScore(total, l.bodyweight, l.gender);
         html += `<tr>
           <td>${l.startingNumber}</td>
           <td>${l.firstname}</td>
           <td>${l.lastname}</td>
-          <td>${l.team}</td>
-          <td>${l.bodyweight}</td>
-          <td><strong>${l.totalFirst}</strong></td>`;
-        if (ty === "olympic")
-          html += `<td>${l.firstLifts[0]}</td><td>${l.firstLifts[1]}</td>`;
-        else
-          html += `<td>${l.firstLifts[0]}</td><td>${l.firstLifts[1]}</td><td>${l.firstLifts[2]}</td>`;
+          <td>${l.team}</td>`;
+        if (ty === "olympic") {
+          for (let i = 0; i < 6; i++) {
+            let att = l.attempts[i];
+            let cellClass = att ? (att.status === 'good' ? 'good' : att.status === 'no' ? 'no' : att.status === 'review' ? 'review' : 'empty') : 'empty';
+            html += `<td class="${cellClass}">${att ? att.weight : '-'}</td>`;
+          }
+        } else {
+          for (let i = 0; i < 9; i++) {
+            let att = l.attempts[i];
+            let cellClass = att ? (att.status === 'good' ? 'good' : att.status === 'no' ? 'no' : att.status === 'review' ? 'review' : 'empty') : 'empty';
+            html += `<td class="${cellClass}">${att ? att.weight : '-'}</td>`;
+          }
+        }
+        html += `<td><strong>${total || "-"}</strong></td>`;
+        html += `<td>${sinclair.toFixed(2)}</td>`;
         html += `<td class="action-buttons">
           <button type="button" onclick="editLifter(${lifters.indexOf(l)})" style="background: #2196f3; padding: 0.3rem 0.6rem; font-size: 0.8rem;">Edit</button>
           <button type="button" onclick="deleteLifter(${lifters.indexOf(l)})" style="background: #f44336; padding: 0.3rem 0.6rem; font-size: 0.8rem;">Delete</button>
@@ -610,7 +1494,7 @@ function updateRegisteredLifters() {
   });
   disp.innerHTML = `<table>${html}</table>`;
 }
-// Edit Lifter
+
 window.editLifter = function (index) {
   const ty = state.currentType;
   if (!ty) return;
@@ -633,16 +1517,19 @@ window.editLifter = function (index) {
   state.editingIndex = index;
   document.querySelector('#reg-form button').textContent = "Update Lifter";
 };
-// Delete Lifter
+
 window.deleteLifter = function (index) {
   const ty = state.currentType;
   if (!ty) return;
   if (confirm("Are you sure you want to delete this lifter?")) {
     state[ty].lifters.splice(index, 1);
+    assignStartingNumbers();
     updateRegisteredLifters();
     updateScoreboard();
+    saveCompetition();
   }
 };
+
 // Scoreboard
 function updateScoreboard() {
   let ty = state.currentType;
@@ -667,106 +1554,166 @@ function updateScoreboard() {
     html += `<tr class="cat-header"><td colspan="99">${cat} kg</td></tr>`;
     Object.keys(out[cat]).sort().forEach(div => {
       html += `<tr class="div-header"><td colspan="99">Division ${div}</td></tr>`;
-      html += `<tr><th>#</th><th>First Name</th><th>Last Name</th><th>Team</th><th>Bodyweight</th>`;
-      if (ty === "olympic") html += `<th>Snatch</th><th>C&J</th>`;
-      else html += `<th>Squat</th><th>Bench</th><th>DL</th>`;
-      html += `<th>Total</th><th>${ty === "olympic" ? "Sinclair" : "Wilks"}</th></tr>`;
-      out[cat][div].forEach((l, idx) => {
-        let total = 0, score = 0;
-        if (l.attempts && l.attempts.length) {
-          total = l.attempts.reduce((s, a) => s + (a.status === 'good' ? a.weight : 0), 0);
-          score = ty === "olympic" ? sinclairScore(total, l.bodyweight) : wilksScore(total, l.bodyweight);
-        }
+      html += `<tr><th>#</th><th>Name</th>`;
+      if (ty === "olympic") html += `<th>S1</th><th>S2</th><th>S3</th><th>CJ1</th><th>CJ2</th><th>CJ3</th>`;
+      else html += `<th>Sq1</th><th>Sq2</th><th>Sq3</th><th>B1</th><th>B2</th><th>B3</th><th>DL1</th><th>DL2</th><th>DL3</th>`;
+      html += `<th>Total</th></tr>`;
+      out[cat][div].sort((a, b) => (getLifterTotal(b) || 0) - (getLifterTotal(a) || 0)).forEach((l, idx) => {
         html += `<tr>
           <td>${l.startingNumber}</td>
-          <td>${l.firstname}</td>
-          <td>${l.lastname}</td>
-          <td>${l.team}</td>
-          <td>${l.bodyweight}</td>`;
-        if (ty === "olympic")
-          html += `<td>${l.firstLifts[0]}</td><td>${l.firstLifts[1]}</td>`;
-        else
-          html += `<td>${l.firstLifts[0]}</td><td>${l.firstLifts[1]}</td><td>${l.firstLifts[2]}</td>`;
-        html += `<td><strong>${total || "-"}</strong></td><td>${score ? score.toFixed(2) : "-"}</td></tr>`;
+          <td>${l.firstname} ${l.lastname}</td>`;
+        if (ty === "olympic") {
+          for (let i = 0; i < 3; i++) {
+            let att = l.attempts[i];
+            let cellClass = att ? (att.status === 'good' ? 'good' : att.status === 'no' ? 'no' : att.status === 'review' ? 'review' : 'empty') : 'empty';
+            html += `<td class="${cellClass}" onclick="openEditLiftModal(${lifters.indexOf(l)}, ${i})" style="cursor: pointer;">${att ? att.weight : '-'}</td>`;
+          }
+          for (let i = 3; i < 6; i++) {
+            let att = l.attempts[i];
+            let cellClass = att ? (att.status === 'good' ? 'good' : att.status === 'no' ? 'no' : att.status === 'review' ? 'review' : 'empty') : 'empty';
+            html += `<td class="${cellClass}" onclick="openEditLiftModal(${lifters.indexOf(l)}, ${i})" style="cursor: pointer;">${att ? att.weight : '-'}</td>`;
+          }
+        } else {
+          for (let i = 0; i < 9; i++) {
+            let att = l.attempts[i];
+            let cellClass = att ? (att.status === 'good' ? 'good' : att.status === 'no' ? 'no' : att.status === 'review' ? 'review' : 'empty') : 'empty';
+            html += `<td class="${cellClass}" onclick="openEditLiftModal(${lifters.indexOf(l)}, ${i})" style="cursor: pointer;">${att ? att.weight : '-'}</td>`;
+          }
+        }
+        html += `<td><strong>${getLifterTotal(l) || "-"}</strong></td></tr>`;
       });
     });
   });
   document.getElementById('scoreboard-table-area').innerHTML = `<table>${html}</table>`;
 }
-document.getElementById('score-cat-checkboxes').addEventListener('change', updateScoreboard);
-document.getElementById('score-div-checkboxes').addEventListener('change', updateScoreboard);
-document.getElementById('reg-cat-checkboxes').addEventListener('change', updateRegisteredLifters);
-document.getElementById('reg-div-checkboxes').addEventListener('change', updateRegisteredLifters);
+
+function getLifterTotal(l) {
+  if (!l.attempts || !l.attempts.length) return 0;
+  return l.attempts.reduce((s, a) => s + (a && a.status === 'good' ? a.weight : 0), 0);
+}
+
+function openEditLiftModal(lifterIdx, attemptIdx) {
+  const ty = state.currentType;
+  const lifter = state[ty].lifters[lifterIdx];
+  const att = lifter.attempts[attemptIdx];
+  state.editingLiftData = { lifterIdx, attemptIdx };
+  document.getElementById('edit-lift-lifter').value = `${lifter.firstname} ${lifter.lastname} - ${getLiftName(attemptIdx, ty)}`;
+  document.getElementById('edit-lift-weight').value = att ? att.weight : '';
+  document.getElementById('edit-lift-decision').value = att ? att.status : '';
+  document.getElementById('edit-lift-modal').classList.add('active');
+}
+
+function closeEditLiftModal() {
+  document.getElementById('edit-lift-modal').classList.remove('active');
+  state.editingLiftData = null;
+}
+
+document.getElementById('edit-lift-form').onsubmit = function (e) {
+  e.preventDefault();
+  const ty = state.currentType;
+  const { lifterIdx, attemptIdx } = state.editingLiftData;
+  const lifter = state[ty].lifters[lifterIdx];
+  if (!lifter.attempts) lifter.attempts = [];
+  
+  let weightVal = document.getElementById('edit-lift-weight').value.trim();
+  let decision = document.getElementById('edit-lift-decision').value;
+  
+  if (weightVal === '-' || weightVal === '' || decision === 'empty') {
+    lifter.attempts[attemptIdx] = null;
+  } else {
+    lifter.attempts[attemptIdx] = {
+      weight: parseFloat(weightVal),
+      status: decision
+    };
+  }
+  
+  updateScoreboard();
+  updateAudienceDisplay();
+  updateNextAttemptPanel();
+  closeEditLiftModal();
+  saveCompetition();
+};
 
 // Audience Display
 function updateAudienceDisplay() {
+  if (state.warmupTimer.isActive) {
+    document.getElementById('warmup-section').style.display = 'block';
+    document.getElementById('competition-section').style.display = 'none';
+    document.getElementById('warmup-timer').textContent = formatTime(state.warmupTimer.val);
+    return;
+  } else {
+    document.getElementById('warmup-section').style.display = 'none';
+    document.getElementById('competition-section').style.display = 'block';
+  }
   const ty = state.currentType;
   if (!ty) {
     document.getElementById('aud-lifter-lastname').textContent = "---";
     document.getElementById('aud-lifter-firstname').textContent = "---";
     document.getElementById('aud-lifter-team').textContent = "---";
-    document.getElementById('aud-cur-weight').textContent = "---";
     document.getElementById('aud-attempt-weight').textContent = "---";
     return;
   }
-  const lifters = state[ty].lifters;
+  
+  const allLifters = state[ty].lifters;
+  const sessionLifters = allLifters.filter(l => l.category === state.activeSession.category && l.division === state.activeSession.division);
   let idx = state.logging.currentLifter;
-  if (idx >= lifters.length) idx = 0;
-  let l = lifters[idx];
-  let attemptNum = state.logging.attemptNumber;
+  if (idx >= sessionLifters.length) idx = 0;
+  let l = sessionLifters[idx];
+  let attemptIdx = state.logging.attemptIndex;
+  
   document.getElementById('aud-lifter-lastname').textContent = l ? l.lastname : "---";
   document.getElementById('aud-lifter-firstname').textContent = l ? l.firstname : "---";
   document.getElementById('aud-lifter-team').textContent = l ? l.team : "---";
-  document.getElementById('aud-attempt-weight').textContent = l ? `${attemptNum}${getOrdinal(attemptNum)} Attempt - ${l.firstLifts[0]} kg` : "---";
-  document.getElementById('aud-decision').textContent = "Waiting";
-  document.getElementById('aud-decision').style.color = "#ff9800";
-  updateBarbellDisplay('aud-barbell', l ? l.firstLifts[0] : 0);
+  
+  let liftName = l ? getLiftName(attemptIdx, ty) : "---";
+  let weight = l && l.attempts[attemptIdx] ? l.attempts[attemptIdx].weight : (l ? l.firstLifts[attemptIdx % (ty === "olympic" ? 2 : 3)] : 0);
+  document.getElementById('aud-attempt-weight').textContent = l ? `${liftName} - ${weight} kg` : "---";
+  updateBarbellDisplay(weight || 0);
   document.getElementById('aud-timer').textContent = formatTime(state.timer.val);
-  updateAudienceRefereeLights();
 }
-function getOrdinal(n) { return n===1?'st':(n===2?'nd':(n===3?'rd':'th')); }
 
-// Barbell: international standard plate order and colors
-function updateBarbellDisplay(id, weight) {
-  let target = document.getElementById(id);
-  if (!target) return;
-  const barWeight = 20, collar = 5;
-  if (weight < barWeight + collar) { target.innerHTML = '<span style="color:#666">No plates loaded</span>'; return; }
-  let perSide = (weight - barWeight - collar) / 2;
-  let plates = [], rightPlates = [];
-  let defs = [
-    { w: 25, c: 'red' },
-    { w: 20, c: 'blue' },
-    { w: 15, c: 'yellow' },
-    { w: 10, c: 'green' },
-    { w: 5, c: 'white' },
-    { w: 2.5, c: 'red' }
+function updateBarbellDisplay(weight) {
+  const barWeight = 20, collarWeight = 5;
+  if (weight < barWeight + collarWeight) {
+    document.getElementById('plates-left').innerHTML = '';
+    document.getElementById('plates-right').innerHTML = '';
+    return;
+  }
+  
+  let perSide = (weight - barWeight - collarWeight) / 2;
+  let plates = [];
+  
+  const plateSizes = [
+    { w: 25, class: 'plate-25', c: 'red' },
+    { w: 20, class: 'plate-20', c: 'blue' },
+    { w: 15, class: 'plate-15', c: 'yellow' },
+    { w: 10, class: 'plate-10', c: 'green' },
+    { w: 5, class: 'plate-5', c: 'white' },
+    { w: 2.5, class: 'plate-2-5', c: 'red' },
+    { w: 2, class: 'plate-2', c: 'blue' },
+    { w: 1.5, class: 'plate-1-5', c: 'yellow' },
+    { w: 1, class: 'plate-1', c: 'green' },
+    { w: 0.5, class: 'plate-0-5', c: 'white' }
   ];
-  let smallDefs = [
-    { w: 2, c: 'blue' },
-    { w: 1.5, c: 'yellow' },
-    { w: 1, c: 'green' },
-    { w: 0.5, c: 'white' }
-  ];
-  for (let pd of defs) {
-    while (perSide >= pd.w - 0.01) {
-      plates.push(pd);
-      perSide -= pd.w;
+  
+  for (let ps of plateSizes) {
+    while (perSide >= ps.w - 0.01) {
+      plates.push(ps);
+      perSide -= ps.w;
       perSide = +perSide.toFixed(2);
     }
   }
-  for (let sd of smallDefs) {
-    while (perSide >= sd.w - 0.01) {
-      rightPlates.push(sd);
-      perSide -= sd.w;
-      perSide = +perSide.toFixed(2);
-    }
-  }
-  let html = '';
-  plates.forEach(pl => html += `<span class="plate ${pl.c}">${pl.w}</span>`);
-  html += `<span class="plate gray">Collar</span>`;
-  rightPlates.forEach(pl => html += `<span class="plate ${pl.c}">${pl.w}</span>`);
-  target.innerHTML = html;
+  
+  let leftHtml = '', rightHtml = '';
+  plates.forEach(pl => {
+    rightHtml += `<div class="plate ${pl.class} ${pl.c}"></div>`;
+  });
+  plates.forEach(pl => {
+    leftHtml += `<div class="plate ${pl.class} ${pl.c}"></div>`;
+  });
+  
+  document.getElementById('plates-left').innerHTML = leftHtml;
+  document.getElementById('plates-right').innerHTML = rightHtml;
 }
 
 // Session management
@@ -781,10 +1728,9 @@ document.getElementById('btn-start-session').onclick = function () {
   state.activeSession.division = division;
   state.activeSession.isRunning = true;
   state.logging.currentLifter = 0;
-  state.logging.attemptNumber = 1;
-  document.getElementById('btn-good-lift').disabled = false;
-  document.getElementById('btn-no-lift').disabled = false;
-  document.getElementById('btn-under-review').disabled = false;
+  state.logging.attemptIndex = 0;
+  state.nextAttemptWaiting = true;
+  document.getElementById('btn-confirm-votes').disabled = true;
   document.getElementById('active-session-info').style.display = 'block';
   document.getElementById('session-details').textContent = `${category} kg - Division ${division}`;
   document.getElementById('btn-start-session').disabled = true;
@@ -792,6 +1738,7 @@ document.getElementById('btn-start-session').onclick = function () {
   state.refereeDecisions = [null, null, null];
   updateAudienceDisplay();
   updateAudienceRefereeLights();
+  updateNextAttemptPanel();
 };
 
 document.getElementById('btn-reset-session').onclick = function () {
@@ -801,55 +1748,213 @@ document.getElementById('btn-reset-session').onclick = function () {
   if (!confirm(`Reset competition for ${category}kg Division ${division}?`)) return;
   const ty = state.currentType;
   const lifters = state[ty].lifters.filter(l => l.category === category && l.division === division);
-  lifters.forEach(l => l.attempts = []);
+  lifters.forEach(l => {
+    l.attempts = [];
+    if (ty === "olympic") {
+      l.attempts[0] = { weight: l.firstLifts[0], status: 'next' };
+      l.attempts[1] = { weight: l.firstLifts[1], status: 'next' };
+    } else {
+      l.attempts[0] = { weight: l.firstLifts[0], status: 'next' };
+      l.attempts[1] = { weight: l.firstLifts[1], status: 'next' };
+      l.attempts[2] = { weight: l.firstLifts[2], status: 'next' };
+    }
+  });
   state.timer.val = parseInt(document.getElementById('ctl-timer-len').value) || 60;
   state.timer.running = false;
   clearInterval(state.timer.interval);
-  document.getElementById('ctl-timer').textContent = formatTime(state.timer.val);
-  document.getElementById('btn-good-lift').disabled = true;
-  document.getElementById('btn-no-lift').disabled = true;
-  document.getElementById('btn-under-review').disabled = true;
+  document.getElementById('btn-confirm-votes').disabled = true;
   state.activeSession.isRunning = false;
   document.getElementById('active-session-info').style.display = 'none';
   document.getElementById('btn-start-session').disabled = false;
   updateScoreboard();
   updateAudienceDisplay();
+  updateNextAttemptPanel();
+  updateRefTimerDisplay();
   alert("✓ Session reset complete!");
 };
-document.getElementById('btn-good-lift').onclick = function () { finalizeAttempt('good'); };
-document.getElementById('btn-no-lift').onclick = function () { finalizeAttempt('no'); };
-document.getElementById('btn-under-review').onclick = function () { finalizeAttempt('review'); };
 
-window.finalizeAttempt = function (decision) {
-  if (!state.activeSession.isRunning) { alert("Please start a session first!"); return; }
-  let ty = state.currentType, lifters = state[ty].lifters, idx = state.logging.currentLifter, l = lifters[idx];
-  if (!l) return;
-  let attemptNum = state.logging.attemptNumber;
-  if (!l.attempts) l.attempts = [];
-  l.attempts[attemptNum-1] = { weight: l.firstLifts[0], status: decision };
-  const decisionText = decision === "good" ? "✓ Good Lift" : decision === "no" ? "✗ No Lift" : "? Under Review";
-  const decisionColor = decision === "good" ? "#4caf50" : decision === "no" ? "#f44336" : "#ff9800";
-  document.getElementById('aud-decision').textContent = decisionText;
-  document.getElementById('aud-decision').style.color = decisionColor;
-  updateScoreboard();
-  updateAudienceDisplay();
-  nextLifter();
+// Referee vote control - FIXED
+window.setRefVote = function(refIdx, decision) {
+  state.refereeDecisions[refIdx] = decision;
+  updateRefereeLightBoxes('ref-control-box');
+  updateAudienceRefereeLights();
+  checkConfirmButton();
 };
 
-window.nextLifter = function () {
-  let ty = state.currentType, lifters = state[ty].lifters;
-  if (state.logging.currentLifter < lifters.length - 1) state.logging.currentLifter++;
-  else { state.logging.currentLifter = 0; state.logging.attemptNumber++; }
-  state.refereeDecisions = [null, null, null];
+document.getElementById('btn-confirm-votes').addEventListener('click', function() {
+  if (state.refereeDecisions.every(d => d !== null)) {
+    // Show decision choice panel instead of auto-showing overlay
+    document.getElementById('decision-choice-panel').classList.add('active');
+  }
+});
+
+function checkConfirmButton() {
+  let allVoted = state.refereeDecisions.every(d => d !== null);
+  document.getElementById('btn-confirm-votes').disabled = !allVoted;
+}
+
+window.showDecisionOverlay = function(decision) {
+  document.getElementById('decision-choice-panel').classList.remove('active');
+  
+  let overlay = document.getElementById('decision-overlay');
+  if (decision === 'good') overlay.textContent = '✓ GOOD LIFT';
+  else if (decision === 'no') overlay.textContent = '✗ NO LIFT';
+  else overlay.textContent = '⏳ UNDER REVIEW';
+  overlay.className = `decision-display ${decision === 'good' ? 'good-lift' : decision === 'no' ? 'no-lift' : 'review-lift'}`;
+  state.decisionOverlayActive = true;
+  
+  setTimeout(() => {
+    let ty = state.currentType, lifters = state[ty].lifters, sessionLifters = lifters.filter(l => l.category === state.activeSession.category && l.division === state.activeSession.division);
+    let idx = state.logging.currentLifter;
+    let attemptIdx = state.logging.attemptIndex;
+    let l = sessionLifters[idx];
+    let actualIdx = lifters.indexOf(l);
+    l = lifters[actualIdx];
+    
+    if (!l) return;
+    if (!l.attempts) l.attempts = [];
+    let weight = l.attempts[attemptIdx] ? l.attempts[attemptIdx].weight : l.firstLifts[attemptIdx % (ty === "olympic" ? 2 : 3)];
+    l.attempts[attemptIdx] = { weight, status: decision };
+    
+    toggleDecisionOverlay();
+    state.refereeDecisions = [null, null, null];
+    state.timer.running = false;
+    clearInterval(state.timer.interval);
+    state.timer.val = parseInt(document.getElementById('ctl-timer-len').value) || 60;
+    state.nextAttemptWaiting = true;
+    updateScoreboard();
+    updateRefTimerDisplay();
+    updateAudienceDisplay();
+    updateAudienceRefereeLights();
+    updateNextAttemptPanel();
+    checkConfirmButton();
+    saveCompetition();
+  }, 2500);
+};
+
+function toggleDecisionOverlay() {
+  let overlay = document.getElementById('decision-overlay');
+  overlay.classList.add('hidden');
+  state.decisionOverlayActive = false;
+}
+
+// Next Attempt Input Panel - FIXED: Shows lift type, weight validation
+function updateNextAttemptPanel() {
+  const ty = state.currentType;
+  if (!ty || !state.activeSession.isRunning || !state.nextAttemptWaiting) {
+    document.getElementById('last-attempt-info').innerHTML = "Ready when session starts...";
+    document.getElementById('next-lift-weight').disabled = true;
+    document.getElementById('btn-submit-next-attempt').disabled = true;
+    document.getElementById('review-warning').style.display = 'none';
+    document.getElementById('weight-validation').style.display = 'none';
+    return;
+  }
+  
+  const allLifters = state[ty].lifters;
+  const sessionLifters = allLifters.filter(l => l.category === state.activeSession.category && l.division === state.activeSession.division);
+  let idx = state.logging.currentLifter;
+  if (idx >= sessionLifters.length) idx = 0;
+  
+  let l = sessionLifters[idx];
+  if (!l) return;
+  
+  let attemptIdx = state.logging.attemptIndex;
+  let lastAttempt = l.attempts[attemptIdx];
+  let lastStatus = lastAttempt ? lastAttempt.status : 'next';
+  let liftName = getLiftName(attemptIdx, ty);
+  
+  // Check if previous attempt is under review
+  if (lastStatus === 'review') {
+    document.getElementById('last-attempt-info').innerHTML = `
+      <strong>${l.lastname}, ${l.firstname}</strong><br>
+      Current Lift: <strong>${liftName}</strong><br>
+      Previous: ${lastAttempt.weight} kg<br>
+      <span style="color: #ff9800; font-weight: bold;">Status: Under Review ⏳</span>
+    `;
+    document.getElementById('next-lift-weight').disabled = true;
+    document.getElementById('btn-submit-next-attempt').disabled = true;
+    document.getElementById('review-warning').style.display = 'block';
+    document.getElementById('weight-validation').style.display = 'none';
+    return;
+  }
+  
+  document.getElementById('review-warning').style.display = 'none';
+  
+  let statusText = lastAttempt ? (lastStatus === 'good' ? '✓ Passed' : lastStatus === 'no' ? '✗ Failed' : 'Pending') : 'First attempt';
+  let statusColor = lastAttempt ? (lastStatus === 'good' ? '#4caf50' : lastStatus === 'no' ? '#f44336' : '#999') : '#999';
+  
+  document.getElementById('last-attempt-info').innerHTML = `
+    <strong>${l.lastname}, ${l.firstname}</strong><br>
+    <strong>Next Lift: ${liftName}</strong><br>
+    Previous: ${lastAttempt ? lastAttempt.weight + ' kg' : 'None'}<br>
+    <span style="color: ${statusColor}; font-weight: bold;">Status: ${statusText}</span>
+  `;
+  
+  let minWeight = lastAttempt ? (lastStatus === 'good' ? lastAttempt.weight + 1 : lastAttempt.weight) : l.firstLifts[attemptIdx % (ty === "olympic" ? 2 : 3)];
+  
+  document.getElementById('next-lift-weight').value = '';
+  document.getElementById('next-lift-weight').min = minWeight;
+  document.getElementById('next-lift-weight').disabled = false;
+  document.getElementById('btn-submit-next-attempt').disabled = false;
+  
+  // Show weight validation message
+  let valMsg = document.getElementById('weight-validation');
+  if (lastAttempt) {
+    if (lastStatus === 'good') {
+      valMsg.innerHTML = `<span style="color: #4caf50;">✓ Min weight: ${minWeight}kg (1kg higher than passed attempt)</span>`;
+    } else if (lastStatus === 'no') {
+      valMsg.innerHTML = `<span style="color: #ff9800;">⚠ Min weight: ${minWeight}kg (same or higher than failed attempt)</span>`;
+    }
+    valMsg.style.display = 'block';
+  } else {
+    valMsg.style.display = 'none';
+  }
+}
+
+document.getElementById('btn-submit-next-attempt').onclick = function() {
+  const weight = parseFloat(document.getElementById('next-lift-weight').value);
+  const minWeight = parseFloat(document.getElementById('next-lift-weight').min);
+  
+  if (!weight) { alert("Please enter a weight!"); return; }
+  if (weight < minWeight) { alert(`Weight must be at least ${minWeight}kg!`); return; }
+  
+  const ty = state.currentType;
+  const allLifters = state[ty].lifters;
+  const sessionLifters = allLifters.filter(l => l.category === state.activeSession.category && l.division === state.activeSession.division);
+  const idx = state.logging.currentLifter;
+  const attemptIdx = state.logging.attemptIndex;
+  
+  let l = sessionLifters[idx];
+  let actualIdx = allLifters.indexOf(l);
+  l = allLifters[actualIdx];
+  
+  if (!l) return;
+  if (!l.attempts) l.attempts = [];
+  l.attempts[attemptIdx] = { weight, status: 'next' };
+  
+  state.timer.running = false;
+  clearInterval(state.timer.interval);
+  state.timer.val = parseInt(document.getElementById('ctl-timer-len').value) || 60;
+  state.nextAttemptWaiting = false;
+  updateScoreboard();
+  updateRefTimerDisplay();
   updateAudienceDisplay();
-  updateAudienceRefereeLights();
+  saveCompetition();
+  document.getElementById('next-lift-weight').value = '';
+  document.getElementById('btn-confirm-votes').disabled = true;
 };
 
 // Timer controls
 function timerSyncViews() {
   let timeStr = formatTime(state.timer.val);
   document.getElementById('aud-timer').textContent = timeStr;
+  updateRefTimerDisplay();
 }
+
+function updateRefTimerDisplay() {
+  document.getElementById('ref-timer-display').textContent = formatTime(state.timer.val);
+}
+
 document.getElementById('ctl-timer-start').addEventListener('click', function () {
   if (state.timer.running) return;
   state.timer.running = true;
@@ -863,16 +1968,52 @@ document.getElementById('ctl-timer-start').addEventListener('click', function ()
     }
   }, 1000);
 });
+
 document.getElementById('ctl-timer-pause').addEventListener('click', function () {
   state.timer.running = false;
   clearInterval(state.timer.interval);
 });
-document.getElementById('ctl-timer-reset').addEventListener('click', function () {
+
+document.getElementById('ctl-timer-stop').addEventListener('click', function () {
+  state.timer.running = false;
+  clearInterval(state.timer.interval);
   state.timer.val = parseInt(document.getElementById('ctl-timer-len').value) || 60;
   timerSyncViews();
 });
 
-// Referee Lights
+// Warmup Timer
+document.getElementById('btn-start-warmup').addEventListener('click', function () {
+  const mins = parseInt(document.getElementById('warmup-duration').value) || 5;
+  state.warmupTimer.val = mins * 60;
+  state.warmupTimer.isActive = true;
+  state.warmupTimer.running = true;
+  document.getElementById('warmup-timer').textContent = formatTime(state.warmupTimer.val);
+  updateAudienceDisplay();
+  state.warmupTimer.interval = setInterval(() => {
+    state.warmupTimer.val--;
+    document.getElementById('warmup-timer').textContent = formatTime(state.warmupTimer.val);
+    if (state.warmupTimer.val <= 0) {
+      clearInterval(state.warmupTimer.interval);
+      state.warmupTimer.running = false;
+      state.warmupTimer.isActive = false;
+      alert("✓ Warmup complete!");
+      updateAudienceDisplay();
+    }
+  }, 1000);
+  alert(`✓ Warmup started for ${mins} minute(s)`);
+});
+
+document.getElementById('btn-stop-warmup').addEventListener('click', function () {
+  if (!state.warmupTimer.isActive) { alert("No warmup running!"); return; }
+  clearInterval(state.warmupTimer.interval);
+  state.warmupTimer.running = false;
+  state.warmupTimer.isActive = false;
+  state.warmupTimer.val = 0;
+  updateAudienceDisplay();
+  alert("✓ Warmup stopped!");
+});
+
+// Referee Lights - FIXED: Proper colors, only show after confirm
 function updateAudienceRefereeLights() {
   let allDecided = state.refereeDecisions.every(d => d !== null);
   if (allDecided) {
@@ -882,17 +2023,26 @@ function updateAudienceRefereeLights() {
     document.getElementById('aud-timer-section').classList.remove('hidden');
     document.getElementById('aud-lights-section').classList.remove('active');
   }
+  updateRefereeLightBoxes('aud-ref-box');
+  updateRefereeLightBoxes('ref-control-box');
+}
+
+function updateRefereeLightBoxes(prefix) {
   for (let i=0; i<3; i++) {
-    let box = document.getElementById('aud-ref-box-' + (i+1));
+    let box = document.getElementById(prefix + '-' + (i+1));
+    if (!box) continue;
     if (state.refereeDecisions[i] == null) {
-      box.className = "ref-box";
+      box.className = "ref-box neutral";
       box.textContent = "";
     } else if (state.refereeDecisions[i] === "good") {
       box.className = "ref-box white";
-      box.textContent = "⬜";
+      box.textContent = "";
     } else if (state.refereeDecisions[i] === "no") {
       box.className = "ref-box red";
-      box.textContent = "🟥";
+      box.textContent = "";
+    } else if (state.refereeDecisions[i] === "review") {
+      box.className = "ref-box yellow";
+      box.textContent = "";
     }
   }
 }
@@ -904,6 +2054,7 @@ document.getElementById('btn-save-ref-keys').onclick = function () {
   state.refKeys.ref3 = document.getElementById('ref-key-3').value.toLowerCase() || '3';
   state.refKeys.good = document.getElementById('ref-key-good').value.toLowerCase() || 'g';
   state.refKeys.no = document.getElementById('ref-key-no').value.toLowerCase() || 'n';
+  state.refKeys.review = document.getElementById('ref-key-review').value.toLowerCase() || 'r';
   document.getElementById('ref-config-msg').innerHTML = "<div class='success-msg'>✓ Key config saved!</div>";
   setTimeout(() => document.getElementById('ref-config-msg').innerHTML = "", 2000);
   updateRefereeControl();
@@ -911,38 +2062,49 @@ document.getElementById('btn-save-ref-keys').onclick = function () {
 
 function updateRefereeControl() {
   let text = `Press <strong>${state.refKeys.ref1}, ${state.refKeys.ref2}, or ${state.refKeys.ref3}</strong> to select a referee.<br>`;
-  text += `Then press <strong>${state.refKeys.good}</strong> for Good Lift (white) or <strong>${state.refKeys.no}</strong> for No Lift (red).`;
-  if (selectedReferee) text += `<br><span style="color:#1976d2; font-weight:bold;">Selected: Referee ${selectedReferee}</span>`;
+  text += `Then press <strong>${state.refKeys.good}</strong> for Good, <strong>${state.refKeys.no}</strong> for No, or <strong>${state.refKeys.review}</strong> for Review.`;
+  if (selectedReferee) text += `<br><span style="color:var(--header-bg); font-weight:bold;">Selected: Referee ${selectedReferee}</span>`;
   document.getElementById('referee-assign-info').innerHTML = text;
 }
 
-// Keyboard event handling for referees
+// Keyboard event handling - FIXED: Hotkeys trigger same events as buttons
 window.addEventListener('keydown', function(e){
   if (!state.activeSession.isRunning) return;
   const key = e.key.toLowerCase();
+  
   if (key === state.refKeys.ref1 || key === state.refKeys.ref2 || key === state.refKeys.ref3) {
     if (key === state.refKeys.ref1) selectedReferee = 1;
     else if (key === state.refKeys.ref2) selectedReferee = 2;
     else if (key === state.refKeys.ref3) selectedReferee = 3;
     updateRefereeControl();
   }
+  
   if (selectedReferee) {
     if (key === state.refKeys.good) {
       state.refereeDecisions[selectedReferee-1] = "good";
       selectedReferee = null;
       updateAudienceRefereeLights();
       updateRefereeControl();
+      checkConfirmButton();
     } else if (key === state.refKeys.no) {
       state.refereeDecisions[selectedReferee-1] = "no";
       selectedReferee = null;
       updateAudienceRefereeLights();
       updateRefereeControl();
+      checkConfirmButton();
+    } else if (key === state.refKeys.review) {
+      state.refereeDecisions[selectedReferee-1] = "review";
+      selectedReferee = null;
+      updateAudienceRefereeLights();
+      updateRefereeControl();
+      checkConfirmButton();
     }
   }
 });
 
 // On load
 window.onload = function () {
+  loadSavedComps();
   switchSection('main-menu');
   populateDivFilters();
   populateSessionDivision();
